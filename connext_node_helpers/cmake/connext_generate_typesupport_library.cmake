@@ -120,7 +120,7 @@ function(connext_generate_typesupport_library lib)
   target_include_directories(${lib}
     PUBLIC
       "$<BUILD_INTERFACE:${_tslib_OUTPUT_DIR}>"
-      "$<INSTALL_INTERFACE:include")
+      "$<INSTALL_INTERFACE:include>")
   install(
     TARGETS ${lib}
     EXPORT idl_${PROJECT_NAME}
