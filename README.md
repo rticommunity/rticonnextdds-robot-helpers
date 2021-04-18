@@ -10,7 +10,6 @@ implementation of ROS 2 applications which use the RTI Connext DDS APIs.
   - [connext_components_register_node](#connext_components_register_node)
   - [connext_add_executable](#connext_add_executable)
 - [Other useful resources](#other-useful-resources)
-- [License](#license)
 
 ## How to use `connext_node_helpers`
 
@@ -202,21 +201,3 @@ connext_add_executable(
 - [`rticonnextdds-ros2-msgs`](https://github.com/asorbini/rticonnextdds-ros2-msgs)
   - Helper library containing C++11 message type supports generated with
    `rtiddsgen` for almost every type include in ROS 2.
-
-## License
-
-RTI grants Licensee a license to use, modify, compile, and create derivative
-works of the Software solely in combination with RTI Connext DDS. Licensee
-may redistribute copies of the Software provided that all such copies are
-subject to this License. The Software is provided "as is", with no warranty
-of any type, including any warranty for fitness for any purpose. RTI is
-under no obligation to maintain or support the Software. RTI shall not be
-liable for any incidental or consequential damages arising out of the use or
-inability to use the Software. For purposes of clarity, nothing in this
-License prevents Licensee from using alternate versions of DDS, provided
-that Licensee may not combine or link such alternate versions of DDS with
-the Software.
-
-```text
-(c) 2021 Copyright, Real-Time Innovations, Inc. (RTI)
-```
