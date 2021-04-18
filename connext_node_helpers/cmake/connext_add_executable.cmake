@@ -13,18 +13,19 @@
 ################################################################################
 function(connext_add_executable)
   cmake_parse_arguments(_exec
-    "" # boolean arguments
+    "STANDALONE;ZEROCOPY" # boolean arguments
     "NAME" # single value arguments
     "SOURCES;LIBRARIES;DEFINES;PKG_DEPS;INCLUDES" # multi-value arguments
     ${ARGN} # current function arguments
   )
 
   add_executable(${_exec_NAME} ${_exec_SOURCES})
-  ament_target_dependencies(${_exec_NAME}
-    rclcpp connext_node_helpers ${_exec_PKG_DEPS})
   # Link RTI Connext DDS' "modern C++" API
   target_link_libraries(${_exec_NAME}
     RTIConnextDDS::cpp2_api ${_exec_LIBRARIES})
+  if(_exec_ZEROCOPY)
+    target_link_libraries(${_exec_NAME} RTIConnextDDS::metp)
+  endif()
   # Set property ENABLE_EXPORTS to link the library with `-rdynamic` and
   # enable sharing of static variables with dynamic libraries.
   set_target_properties(${_exec_NAME} PROPERTIES ENABLE_EXPORTS true)
@@ -40,4 +41,8 @@ function(connext_add_executable)
     LIBRARY DESTINATION lib
     RUNTIME DESTINATION bin
   )
+  if(NOT STANDALONE)
+    ament_target_dependencies(${_exec_NAME}
+      rclcpp connext_node_helpers ${_exec_PKG_DEPS})
+  endif()
 endfunction()

@@ -45,9 +45,9 @@ struct PingPongTesterOptions
     node->declare_parameter("max_execution_time", 30000000 /* 30s */);
     node->declare_parameter("ignored_initial_samples", 3);
     node->declare_parameter("print_interval", 1000000 /* 1s */);
-    node->declare_parameter("type_name", "PingPongType");
-    node->declare_parameter("topic_name_ping", "Ping");
-    node->declare_parameter("topic_name_pong", "Pong");
+    node->declare_parameter("type_name", "PingMessage");
+    node->declare_parameter("topic_name_ping", "rt/ping");
+    node->declare_parameter("topic_name_pong", "rt/pong");
     node->declare_parameter("qos_profile_ping",
       "BuiltinQosLibExp::Generic.StrictReliable.LargeData");
     node->declare_parameter("qos_profile_pong",
