@@ -9,6 +9,7 @@ implementation of ROS 2 applications which use the RTI Connext DDS APIs.
   - [connext_generate_message_typesupport_cpp](#connext_generate_message_typesupport_cpp)
   - [connext_components_register_node](#connext_components_register_node)
   - [connext_add_executable](#connext_add_executable)
+- [Other useful resources](#other-useful-resources)
 - [License](#license)
 
 ## How to use `connext_node_helpers`
@@ -193,6 +194,14 @@ connext_add_executable(
   INCLUDES
     ${CMAKE_CURRENT_BINARY_DIR}/rtiddsgen)
 ```
+
+## Other useful resources
+
+- [`rticonnextdds-ros2-demos`](https://github.com/asorbini/rticonnextdds-ros2-msgs)
+  - Collection of example hybrid ROS 2/Connext applications.
+- [`rticonnextdds-ros2-msgs`](https://github.com/asorbini/rticonnextdds-ros2-msgs)
+  - Helper library containing C++11 message type supports generated with
+   `rtiddsgen` for almost every type include in ROS 2.
 
 ## License
 
