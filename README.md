@@ -196,7 +196,7 @@ connext_add_executable(
 
 ## Other useful resources
 
-- [`rticonnextdds-ros2-demos`](https://github.com/asorbini/rticonnextdds-ros2-msgs)
+- [`rticonnextdds-ros2-demos`](https://github.com/asorbini/rticonnextdds-ros2-demos)
   - Collection of example hybrid ROS 2/Connext applications.
 - [`rticonnextdds-ros2-msgs`](https://github.com/asorbini/rticonnextdds-ros2-msgs)
   - Helper library containing C++11 message type supports generated with
