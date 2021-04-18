@@ -3,7 +3,7 @@
 This repository contains a collection of helper resources to simplify the
 implementation of ROS 2 applications which use the RTI Connext DDS APIs.
 
-- [How to use `connext_node_helpers`](#how-to-use-connext_node_helpers)
+- [Use `connext_node_helpers` in a ROS 2 package](#use-connext_node_helpers-in-a-ros-2-package)
 - [CMake Helpers](#cmake-helpers)
   - [connext_generate_typesupport_library](#connext_generate_typesupport_library)
   - [connext_generate_message_typesupport_cpp](#connext_generate_message_typesupport_cpp)
@@ -11,7 +11,7 @@ implementation of ROS 2 applications which use the RTI Connext DDS APIs.
   - [connext_add_executable](#connext_add_executable)
 - [Other useful resources](#other-useful-resources)
 
-## How to use `connext_node_helpers`
+## Use `connext_node_helpers` in a ROS 2 package
 
 Package `connext_node_helpers` provides CMake and C++ helpers to facilitate the
 implementation of ROS 2 packages based on RTI Connext DDS.
