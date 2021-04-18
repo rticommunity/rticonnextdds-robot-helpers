@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>connext_node_helpers</name>
+  <version>0.1.0</version>
+  <description>A collection of code and build utilities for ROS 2 application built with RTI Connext DDS</description>
+  <maintainer email="asorbini@rti.com">Andrea Sorbini</maintainer>
+  <license>RTI Free-To-Use</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>rclcpp</depend>
+
+  <!-- Used to load the same RTI Connext DDS installation as rmw_connextdds -->
+  <depend>rti_connext_dds_cmake_module</depend>
+
+  <!-- The RMW implementation is not linked by directly by this module, but
+       it is required at runtime so we add and export a dependency from it -->
+  <depend>rmw_connextdds</depend>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

@@ -1,0 +1,72 @@
+# (c) 2021 Copyright, Real-Time Innovations, Inc.  All rights reserved.
+#
+# RTI grants Licensee a license to use, modify, compile, and create derivative
+# works of the Software.  Licensee has the right to distribute object form
+# only for use with RTI products.  The Software is provided "as is", with no
+# warranty of any type, including any warranty for fitness for any purpose.
+# RTI is under no obligation to maintain or support the Software.  RTI shall
+# not be liable for any incidental or consequential damages arising out of the
+# use or inability to use the software.
+
+# generated from connext_node_helpers/connext_node_helpers-extras.cmake.in
+
+################################################################################
+# Cache useful paths in variables
+################################################################################
+# Path to `<pkg-install>/share`
+# `@PROJECT_NAME@_DIR` is `<pkg-install>/share/cmake`
+get_filename_component(@PROJECT_NAME@_SHARE_DIR "${@PROJECT_NAME@_DIR}" DIRECTORY)
+
+################################################################################
+# Load RTI Connext DDS using ROS 2 package `rti_connext_dds_cmake_module`
+################################################################################
+# rclcpp's dependency chain will already include `rti_connext_dds_cmake_module`
+# if environment variable RMW_IMPLEMENTATION is set to `rmw_connextdds` when the
+# project is configured with cmake. Since that might not always be the case,
+# we load the package manually to make sure that we use the same RTI Connext DDS
+# installation and the exact same architecture as `rmw_connextdds`.
+# This is required for things to work properly.
+################################################################################
+find_package(rti_connext_dds_cmake_module REQUIRED)
+
+# Instead of using the default `FindRTIConnextDDS.cmake` shipped with Connext
+# use the one included in `connext_node_helpers` which is up to date with the
+# latest version from `rticonnextdds-examples`.
+list(INSERT CMAKE_MODULE_PATH 0 "${@PROJECT_NAME@_DIR}")
+
+# Determine list of optional Connext components to load.
+# Auto-loading of components may be overridden by specifying variable
+# CONNEXTDDS_COMPONENTS before loading `connext_node_helpers`.
+if("${CONNEXTDDS_COMPONENTS}" STREQUAL "")
+  set(CONNEXTDDS_COMPONENTS
+    metp)
+endif()
+
+set(CONNEXTDDS_COMPONENTS ${CONNEXTDDS_COMPONENTS}
+  CACHE INTERNAL "List of optional RTI Connext DDS components to load" FORCE)
+
+message(STATUS
+  "loading RTI Connext DDS with components: ${CONNEXTDDS_COMPONENTS}")
+
+find_package(RTIConnextDDS REQUIRED COMPONENTS ${CONNEXTDDS_COMPONENTS})
+if(NOT RTIConnextDDS_FOUND)
+  message(FATAL_ERROR "RTI Connext DDS (${CONNEXTDDS_ARCH}) not found in "
+    "'${CONNEXTDDS_DIR}'")
+elseif("${RTICONNEXTDDS_VERSION}" VERSION_LESS_EQUAL "6.0.0")
+  message(FATAL_ERROR "RTI Connext DDS 6.x required. "
+    "Found: ${RTICONNEXTDDS_VERSION}")
+  set(RTIConnextDDS_FOUND false)
+endif()
+
+################################################################################
+# Path to custom `node_main.cpp.in` to replace the one from `rclcpp_components`
+################################################################################
+set(@PROJECT_NAME@_NODE_TEMPLATE "${@PROJECT_NAME@_SHARE_DIR}/cmake/node_main.cpp.in")
+
+################################################################################
+# Include CMake helper functions
+################################################################################
+include("${@PROJECT_NAME@_DIR}/connext_components_register_node.cmake")
+include("${@PROJECT_NAME@_DIR}/connext_add_executable.cmake")
+include("${@PROJECT_NAME@_DIR}/connext_generate_message_typesupport_cpp.cmake")
+include("${@PROJECT_NAME@_DIR}/connext_generate_typesupport_library.cmake")
