@@ -79,8 +79,24 @@ protected:
       const uint64_t avg_us = total_latency_ / (this->count_ * 2);
       const double avg_ms = static_cast<double>(avg_us) / 1000.0;
       msg << "Avg-Latency [" << this->count_ << "/" <<
-        this->test_options_.max_samples << "] " <<
-        std::fixed << std::setprecision(3) << avg_ms << " ms";
+        this->test_options_.max_samples << "] ";
+      double avg_print = avg_ms;
+      const char * avg_unit = "ms";
+
+      if (avg_print < 1) {
+        avg_print = avg_print * 1000.0;
+        avg_unit = "us";
+      }
+
+      double avg_int;
+      if (std::modf(avg_print, &avg_int) >= 0.001) {
+        msg << std::fixed << std::setprecision(3);
+      } else {
+        msg << std::fixed << std::setprecision(1);
+      }
+
+      msg << avg_print << " " << avg_unit;
+
       if (final_log) {
         msg << " [FINAL]";
       }
