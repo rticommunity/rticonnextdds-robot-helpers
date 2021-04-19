@@ -1,6 +1,6 @@
 # Third-Party Notices for rticonnextdds-ros2-demos
 
-`rticonnextdds-ros2-demos1 uses third party material from the projects listed
+`rticonnextdds-ros2-demos uses third party material from the projects listed
 below.
 
 The original copyright notice and the license under which Real-Time Innovations, Inc.
