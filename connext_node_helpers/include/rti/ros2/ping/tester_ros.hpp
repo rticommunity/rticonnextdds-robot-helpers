@@ -96,7 +96,7 @@ protected:
       exit_timer_ = this->create_wall_timer(1s, [this](){
         if (check_test_complete()) {
           exit_timer_->cancel();
-          exit_timer_ = this->create_wall_timer(500ms, [this](){
+          exit_timer_ = this->create_wall_timer(2s, [this](){
             this->shutdown();
           });
         }
