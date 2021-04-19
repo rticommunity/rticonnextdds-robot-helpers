@@ -41,7 +41,7 @@ struct PingPongTesterOptions
   static void declare(N * const node)
   {
     node->declare_parameter("domain_id", 0);
-    node->declare_parameter("max_samples", 1000);
+    node->declare_parameter("max_samples", 0);
     node->declare_parameter("max_execution_time", 30000000 /* 30s */);
     node->declare_parameter("ignored_initial_samples", 3);
     node->declare_parameter("print_interval", 1000000 /* 1s */);
@@ -52,7 +52,7 @@ struct PingPongTesterOptions
       "BuiltinQosLibExp::Generic.StrictReliable.LargeData");
     node->declare_parameter("qos_profile_pong",
       "BuiltinQosLibExp::Generic.StrictReliable.LargeData");
-    node->declare_parameter("display_received", true);
+    node->declare_parameter("display_received", false);
   }
 
   template<typename N>
