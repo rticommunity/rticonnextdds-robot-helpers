@@ -87,6 +87,48 @@ install(
       cmake/node_main.cpp.in
     DESTINATION "share/${PROJECT_NAME}/cmake")
 
+################################################################################
+# Build included examples
+################################################################################
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/connext_node_helpers.cmake)
+
+find_package(rclcpp REQUIRED)
+find_package(rclcpp_components REQUIRED)
+find_package(std_msgs REQUIRED)
+
+connext_generate_message_typesupport_cpp(String PACKAGE std_msgs)
+
+add_library(connext_node_helpers_examples SHARED
+  src/examples/ping_string.cpp
+  ${std_msgs_String_FILES}
+  include/connext_node_helpers/visibility_control.h)
+ament_target_dependencies(connext_node_helpers_examples
+  rclcpp
+  rclcpp_components)
+target_compile_definitions(connext_node_helpers_examples
+  PRIVATE "CONNEXT_NODE_HELPERS_BUILDING_DLL")
+target_include_directories(connext_node_helpers_examples
+  PRIVATE
+    ${CMAKE_CURRENT_BINARY_DIR}/rtiddsgen
+    ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_link_libraries(connext_node_helpers_examples
+  RTIConnextDDS::cpp2_api
+  ${PROJECT_NAME})
+set_target_properties(
+  connext_node_helpers_examples PROPERTIES ENABLE_EXPORTS true)
+install(TARGETS connext_node_helpers_examples
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin)
+
+connext_components_register_node(connext_node_helpers_examples
+  PLUGIN "StringPingPublisher"
+  EXECUTABLE ping_string_pub)
+
+connext_components_register_node(connext_node_helpers_examples
+  PLUGIN "StringPingSubscriber"
+  EXECUTABLE ping_string_sub)
+
 ament_package(
   CONFIG_EXTRAS_POST "${PROJECT_NAME}-extras.cmake.in"
 )

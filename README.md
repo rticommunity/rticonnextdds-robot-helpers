@@ -11,6 +11,7 @@ implementation of ROS 2 applications which use the RTI Connext DDS APIs.
   - [connext_add_executable](#connext_add_executable)
 - [C++ Helpers](#c-helpers)
   - [ping-pong tester](#ping-pong-tester)
+  - [processor node](#processor-node)
 - [Other useful resources](#other-useful-resources)
 
 ## Use `connext_node_helpers` in a ROS 2 package
@@ -204,88 +205,21 @@ The header files under `include/rti/ros2/ping` provide a generic implementation
 of a DDS-based ping-pong tester.
 
 Classes `rti::ros2::ping::PingPongPublisher` and `rti::ros2::ping::PingPongSubscriber`
-can be used to instantiate a test for any DDS type, e.g.:
+can be used to instantiate a test for any DDS type.
 
-```cpp
-// string_ping.cpp
+For an example, see [ping_string.cpp](connext_node_helpers/src/examples/ping_string.cpp).
 
-#include <string>
+### processor node
 
-#include <rti/ros2/ping/publisher.hpp>
+This utility provides a generic framework for implementing custom message processing
+logic, in which messages are read from an input topic, passed to a processor object,
+and the result is published to an output topic.
 
-#include <rti/ros2/data/memory.hpp>
-
-#include "std_msgs/msg/String.hpp"
-
-#include "rclcpp_components/register_node_macro.hpp"
-
-using namespace std_msgs::msg;
-using namespace rti::ros2::data;
-using namespace rti::ros2::ping;
-
-class StringPingPublisher : public PingPongPublisher<String, DataMemoryDynamic>
-{
-public:
-  StringPingPublisher(const rclcpp::NodeOptions & options)
-  : PingPongPublisher("string_pub", options)
-  {
-    this->init_test();
-  }
-
-protected:
-  virtual void prepare_ping(String & ping, const bool final)
-  {
-    if (final) {
-      ping.data(std::to_string(0));
-      return;
-    }
-
-    ping.data(std::to_string(this->participant_->current_time().to_microsecs()));
-  }
-
-  // Process received pong sample and return the timestamp
-  virtual void process_pong(
-    dds::sub::LoanedSamples<String> & pong_samples,
-    uint64_t & pong_timestamp)
-  {
-    pong_timestamp = std::stoull(pong_samples[0].data().data(), nullptr, 0);
-  }
-};
-
-class StringPingSubscriber : public PingPongPublisher<String, DataMemoryDynamic>
-{
-public:
-  StringPingSubscriber(const rclcpp::NodeOptions & options)
-  : PingPongSubscriber("string_sub", options)
-  {
-    this->init_test();
-  }
-
-protected:
-  virtual void prepare_pong(
-    String * const pong, const uint64_t ping_ts)
-  {
-    ping.data(std::to_string(ping_ts));
-  }
-
-  virtual void process_ping(
-    dds::sub::LoanedSamples<String> & ping_samples,
-    uint64_t & ping_timestamp)
-  {
-    ping_timestamp = std::stoull(ping_samples[0].data().data(), nullptr, 0);
-  }
-
-  virtual void dump_ping(
-    dds::sub::LoanedSamples<String> & ping_samples,
-    std::ostringstream & msg)
-  {
-    msg << ping_samples[0].data().data();
-  }
-};
-
-RCLCPP_COMPONENTS_REGISTER_NODE(StringPingPublisher)
-RCLCPP_COMPONENTS_REGISTER_NODE(StringPingSubscriber)
-```
+The framework provides an example of how to build the logic feeding the processor
+object, either by creating endpoints using the ROS 2 API, or by creating them
+using RTI Connext DDS directly. The idea is to try to make the processing logic
+indepent of the different message representations used by these two APIs, in
+order to provide flexibility to deploy it in different contexts.
 
 ## Other useful resources
 

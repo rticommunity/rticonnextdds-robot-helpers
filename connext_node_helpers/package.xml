@@ -18,6 +18,10 @@
        it is required at runtime so we add and export a dependency from it -->
   <depend>rmw_connextdds</depend>
 
+  <!-- Reuse some of the types from std_msgs for example code -->
+  <depend>std_msgs</depend>
+  <depend>rclcpp_components</depend>
+
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
 

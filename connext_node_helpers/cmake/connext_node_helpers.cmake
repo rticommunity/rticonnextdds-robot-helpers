@@ -64,3 +64,5 @@ elseif("${RTICONNEXTDDS_VERSION}" VERSION_LESS_EQUAL "6.0.0")
   set(RTIConnextDDS_FOUND false)
 endif()
 
+set(connext_node_helpers_NODE_TEMPLATE
+  "${CONNEXT_NODE_HELPERS_DIR}/cmake/node_main.cpp.in")
