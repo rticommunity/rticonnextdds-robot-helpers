@@ -34,7 +34,6 @@ endif()
 
 add_library(${PROJECT_NAME} SHARED
   src/lib.cpp
-  include/rti/ros2/processor/processor.hpp
   include/rti/ros2/data/access.hpp
   include/rti/ros2/data/memory.hpp
   include/rti/ros2/ping/tester.hpp

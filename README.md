@@ -11,7 +11,6 @@ implementation of ROS 2 applications which use the RTI Connext DDS APIs.
   - [connext_add_executable](#connext_add_executable)
 - [C++ Helpers](#c-helpers)
   - [ping-pong tester](#ping-pong-tester)
-  - [processor node](#processor-node)
 - [Other useful resources](#other-useful-resources)
 
 ## Use `connext_node_helpers` in a ROS 2 package
@@ -208,18 +207,6 @@ Classes `rti::ros2::ping::PingPongPublisher` and `rti::ros2::ping::PingPongSubsc
 can be used to instantiate a test for any DDS type.
 
 For an example, see [ping_string.cpp](connext_node_helpers/src/examples/ping_string.cpp).
-
-### processor node
-
-This utility provides a generic framework for implementing custom message processing
-logic, in which messages are read from an input topic, passed to a processor object,
-and the result is published to an output topic.
-
-The framework provides an example of how to build the logic feeding the processor
-object, either by creating endpoints using the ROS 2 API, or by creating them
-using RTI Connext DDS directly. The idea is to try to make the processing logic
-indepent of the different message representations used by these two APIs, in
-order to provide flexibility to deploy it in different contexts.
 
 ## Other useful resources
 
