@@ -8,50 +8,46 @@
 // not be liable for any incidental or consequential damages arising out of the
 // use or inability to use the software.
 
-#ifndef CONNEXT_NODE_HELPERS__RTI_ROS2_PING_SUBSCRIBER_HPP
-#define CONNEXT_NODE_HELPERS__RTI_ROS2_PING_SUBSCRIBER_HPP
+#ifndef CONNEXT_NODE_HELPERS__RTI_ROS2_PING_SUBSCRIBER_ROS_HPP
+#define CONNEXT_NODE_HELPERS__RTI_ROS2_PING_SUBSCRIBER_ROS_HPP
 
-#include <rti/ros2/ping/tester.hpp>
+#include <rti/ros2/ping/tester_ros.hpp>
 
 namespace rti { namespace ros2 { namespace ping {
 
-template<typename T, typename A>
-class PingPongSubscriber : public PingPongTester<T, A>
+template<typename T>
+class RosPingPongSubscriber : public RosPingPongTester<T>
 {
 public:
-  PingPongSubscriber(
+  RosPingPongSubscriber(
     const char * const name,
     const rclcpp::NodeOptions & options)
-  : PingPongTester<T, A>(name, options, false /* pong */)
+  : RosPingPongTester<T>(name, options, false /* pong */)
   {}
 
 protected:
   // Helper function to fill in the contents of a pong
-  virtual void prepare_pong(T * const pong, const uint64_t ping_ts) = 0;
+  virtual void prepare_pong(T & pong, const uint64_t ping_ts) = 0;
 
   // Process received ping sample and return the timestamp
-  virtual void process_ping(
-    dds::sub::LoanedSamples<T> & ping_samples,
-    uint64_t & pong_timestamp) = 0;
+  virtual void process_ping(T & ping, uint64_t & pong_timestamp) = 0;
 
   // Helper function to dump the contents of a received ping to a string
-  virtual void dump_ping(
-    dds::sub::LoanedSamples<T> & ping_samples,
-    std::ostringstream & msg) = 0;
+  virtual void dump_ping(T & ping, std::ostringstream & msg) = 0;
 
   virtual void init_test()
   {
-    PingPongTester<T, A>::init_test();
+    RosPingPongTester<T>::init_test();
 
     RCLCPP_INFO(this->get_logger(),
       "ping-pong subscriber ready, waiting for publisher...");
   }
 
-  // Overload `on_data()` to propagate ping sample to the pong topic.
-  virtual void on_data(dds::sub::LoanedSamples<T> & ping_samples)
+  // Overload `on_message()` to propagate ping sample to the pong topic.
+  virtual void on_message(const typename T::SharedPtr ping)
   {
     uint64_t ping_ts;
-    process_ping(ping_samples, ping_ts);
+    process_ping(*ping, ping_ts);
 
     if (ping_ts == 0) {
       RCLCPP_INFO(this->get_logger(), "received end ping, exiting");
@@ -64,17 +60,15 @@ protected:
 
       msg << "[CameraImage] ";
 
-      dump_ping(ping_samples, msg);
+      dump_ping(*ping, msg);
 
       RCLCPP_INFO(this->get_logger(), msg.str().c_str());
     }
 
     // Send back the timestamp to the writer.
-    auto pong = this->alloc_sample();
-
-    prepare_pong(pong, ping_ts);
+    prepare_pong(*this->cached_sample_, ping_ts);
     
-    this->writer_.write(*pong);
+    this->writer_->publish(*this->cached_sample_);
   }
 };
 
@@ -82,4 +76,4 @@ protected:
 }  // namespace ros2
 }  // namespace rti
 
-#endif  // CONNEXT_NODE_HELPERS__RTI_ROS2_PING_SUBSCRIBER_HPP
+#endif  // CONNEXT_NODE_HELPERS__RTI_ROS2_PING_SUBSCRIBER_ROS_HPP

@@ -363,6 +363,11 @@ protected:
     }
   }
 
+  virtual uint64_t ts_now()
+  {
+    return this->participant_->current_time().to_microsecs();
+  }
+
   // Mark test as active
   virtual void test_start()
   {
@@ -372,13 +377,13 @@ protected:
     test_complete_ = false;
     count_ignored_ = 0;
     count_ = 0;
-    start_ts_ = this->participant_->current_time().to_microsecs();
+    start_ts_ = this->ts_now();
   }
 
   // Mark test as inactive and call shutdown() to terminate process.
   virtual void test_stop()
   {
-    auto stop_ts = this->participant_->current_time().to_microsecs();
+    auto stop_ts = this->ts_now();
     const uint64_t run_time = stop_ts - start_ts_;
     const double run_time_s = run_time / 1000000.0;
     RCLCPP_INFO(this->get_logger(), "test stopped after %lf s", run_time_s);
@@ -419,7 +424,7 @@ protected:
   // - The maximum allowed run time was reached.
   virtual bool is_test_complete()
   {
-    auto ts = this->participant_->current_time().to_microsecs();
+    auto ts = this->ts_now();
 
     const bool time_expired =
       start_ts_ > 0 && test_options_.max_execution_time > 0 &&
@@ -460,10 +465,35 @@ protected:
     return false;
   }
 
+  // Callback invoked every time data is received from the reader.
+  virtual void on_data(dds::sub::LoanedSamples<T> & samples)
+  {
+    (void)samples;
+  }
+
   // Default handler for "data available" events which calls take() to reset
-  // the status flag on the reader. Subclasses will tipically overload this method.
+  // the status flag on the reader. Subclasses will tipically overload the
+  // on_data() callback.
   virtual void on_data_available() {
-    this->reader_.take();
+    // Read samples from reader cache and notify a callback.
+    // Always peform a take so the listener is not called repeatedly.
+    auto samples = reader_.take();
+    const bool has_data = samples.length() > 0;
+    if (has_data && samples[0].info().valid()) {
+      on_data(samples);
+    } else if (has_data && !samples[0].info().valid()) {
+      // An "invalid" sample generally indicates a state transition from an
+      // unmatched/not-alive remote writer. Check this is expected (e.g if the
+      // test has already been completed), or terminate the test early otherwise.
+      if (!check_test_complete()) {
+        RCLCPP_ERROR(this->get_logger(), "lost peer before end of test");
+        test_stop();
+      }
+    } else if (!has_data) {
+      // This should never happen, but just in case, print an error and exit.
+      RCLCPP_ERROR(this->get_logger(), "woke up without data");
+      test_stop();
+    }
   };
 
   // Callback triggered when one of the enabled statuses is triggered on the

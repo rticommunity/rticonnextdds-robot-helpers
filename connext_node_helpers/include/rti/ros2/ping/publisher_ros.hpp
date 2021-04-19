@@ -8,21 +8,21 @@
 // not be liable for any incidental or consequential damages arising out of the
 // use or inability to use the software.
 
-#ifndef CONNEXT_NODE_HELPERS__RTI_ROS2_PING_PUBLISHER_HPP
-#define CONNEXT_NODE_HELPERS__RTI_ROS2_PING_PUBLISHER_HPP
+#ifndef CONNEXT_NODE_HELPERS__RTI_ROS2_PING_PUBLISHER_ROS_HPP
+#define CONNEXT_NODE_HELPERS__RTI_ROS2_PING_PUBLISHER_ROS_HPP
 
-#include <rti/ros2/ping/tester.hpp>
+#include <rti/ros2/ping/tester_ros.hpp>
 
 namespace rti { namespace ros2 { namespace ping {
 
-template<typename T, typename A>
-class PingPongPublisher : public PingPongTester<T, A>
+template<typename T>
+class RosPingPongPublisher : public RosPingPongTester<T>
 {
 public:
-  PingPongPublisher(
+  RosPingPongPublisher(
     const char * const name,
     const rclcpp::NodeOptions & options)
-  : PingPongTester<T, A>(name, options, true /* ping */)
+  : RosPingPongTester<T>(name, options, true /* ping */)
   {}
 
 protected:
@@ -30,13 +30,11 @@ protected:
   virtual void prepare_ping(T & sample, const bool final) = 0;
 
   // Process received pong sample and return the timestamp
-  virtual void process_pong(
-    dds::sub::LoanedSamples<T> & pong_samples,
-    uint64_t & pong_timestamp) = 0;
+  virtual void process_pong(T & pong, uint64_t & pong_timestamp) = 0;
   
   virtual void init_test()
   {
-    PingPongTester<T, A>::init_test();
+    RosPingPongTester<T>::init_test();
 
     // Start timer to periodically check exit conditions
     this->start_exit_timer();
@@ -48,7 +46,7 @@ protected:
   // Overload `test_start()` to initialize test state and send an initial ping.
   virtual void test_start()
   {
-    PingPongTester<T, A>::test_start();
+    RosPingPongTester<T>::test_start();
     ping();
   }
 
@@ -58,7 +56,7 @@ protected:
     if (this->test_complete_) {
       print_latency(true /* final */);
     }
-    PingPongTester<T, A>::test_stop();
+    RosPingPongTester<T>::test_stop();
   }
 
   // Once the test is complete, we send a final ping with timestamp=0 to notify
@@ -66,7 +64,7 @@ protected:
   // the writer will also exit.
   virtual void test_complete()
   {
-    PingPongTester<T, A>::test_complete();
+    RosPingPongTester<T>::test_complete();
     ping(true /* final */);
   }
 
@@ -91,22 +89,19 @@ protected:
     RCLCPP_INFO(this->get_logger(), msg.str().c_str());
   }
 
-  // Send a ping message unless the test has already completed.
+  // Send a ping message
   virtual void ping(const bool final = false)
   {
-    // Allocate a sample and prepare it for publishing
-    auto sample = this->alloc_sample();
-
-    prepare_ping(*sample, final);
+    prepare_ping(*this->cached_sample_, final);
     
     // Write the sample out
-    this->writer_.write(*sample);
+    this->writer_->publish(*this->cached_sample_);
   }
 
-  // Overload on_data() callback to process the pong sample and compute the
+  // Overload on_message() to process the pong sample and compute the
   // round-trip latency. We store the value halved to compute a running average
   // of one-way latency.
-  virtual void on_data(dds::sub::LoanedSamples<T> & pong_samples)
+  virtual void on_message(const typename T::SharedPtr pong)
   {
     if (!this->test_active_) {
       RCLCPP_ERROR(this->get_logger(), "pong received while test inactive");
@@ -116,9 +111,9 @@ protected:
 
     // Extract timestamp from pong sample.
     uint64_t pong_ts = 0;
-    process_pong(pong_samples, pong_ts);
+    process_pong(*pong, pong_ts);
 
-    uint64_t receive_ts = this->participant_->current_time().to_microsecs();
+    uint64_t receive_ts = this->ts_now();
     // this test will not cope well with a drifting clock
     assert(receive_ts >= pong_ts);
     uint64_t latency = (receive_ts - pong_ts) / 2;
@@ -155,4 +150,4 @@ protected:
 }  // namespace ros2
 }  // namespace rti
 
-#endif  // CONNEXT_NODE_HELPERS__RTI_ROS2_PING_PUBLISHER_HPP
+#endif  // CONNEXT_NODE_HELPERS__RTI_ROS2_PING_PUBLISHER_ROS_HPP

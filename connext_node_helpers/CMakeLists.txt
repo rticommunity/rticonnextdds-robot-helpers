@@ -38,7 +38,10 @@ add_library(${PROJECT_NAME} SHARED
   include/rti/ros2/data/memory.hpp
   include/rti/ros2/ping/tester.hpp
   include/rti/ros2/ping/publisher.hpp
-  include/rti/ros2/ping/subscriber.hpp)
+  include/rti/ros2/ping/subscriber.hpp
+  include/rti/ros2/ping/tester_ros.hpp
+  include/rti/ros2/ping/publisher_ros.hpp
+  include/rti/ros2/ping/subscriber_ros.hpp)
 ament_target_dependencies(${PROJECT_NAME}
   rclcpp)
 ament_export_dependencies(
