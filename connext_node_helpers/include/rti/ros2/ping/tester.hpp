@@ -38,6 +38,7 @@ struct PingPongTesterOptions
   std::string qos_profile_ping;
   std::string qos_profile_pong;
   bool display_received{false};
+  bool dedicated_participant{false};
 
   template<typename N>
   static void declare(N * const node)
@@ -55,6 +56,7 @@ struct PingPongTesterOptions
     node->declare_parameter("qos_profile_pong",
       "BuiltinQosLibExp::Generic.StrictReliable.LargeData");
     node->declare_parameter("display_received", false);
+    node->declare_parameter("dedicated_participant", false);
   }
 
   template<typename N>
@@ -72,6 +74,7 @@ struct PingPongTesterOptions
     node->get_parameter("qos_profile_ping", opts.qos_profile_ping);
     node->get_parameter("qos_profile_pong", opts.qos_profile_pong);
     node->get_parameter("display_received", opts.display_received);
+    node->get_parameter("dedicated_participant", opts.dedicated_participant);
 
     if (log_result)
     {
@@ -95,7 +98,8 @@ struct PingPongTesterOptions
       "\ttopic_name_pong = '%s'\n"
       "\tqos_profile_ping = '%s'\n"
       "\tqos_profile_pong = '%s'\n"
-      "\tdisplay_received = %d",
+      "\tdisplay_received = %d\n"
+      "\tdedicated_participant = %d",
       opts.domain_id,
       opts.max_samples,
       static_cast<double>(opts.max_execution_time) / 1000000.0,
@@ -106,7 +110,8 @@ struct PingPongTesterOptions
       opts.topic_name_pong.c_str(),
       opts.qos_profile_ping.c_str(),
       opts.qos_profile_pong.c_str(),
-      opts.display_received);
+      opts.display_received,
+      opts.dedicated_participant);
   }
 };
 
@@ -218,13 +223,19 @@ protected:
   // application is running with another RMW), we create a new DomainParticipant.
   virtual dds::domain::DomainParticipant create_participant()
   {
-    auto participant = dds::domain::find(test_options_.domain_id);
-    if (dds::core::null == participant) {
-      RCLCPP_ERROR(this->get_logger(),
-        "failed to lookup DomainParticipant. Is the application running on rmw_connextdds?");
-      return dds::domain::DomainParticipant(test_options_.domain_id);
+    if (test_options_.dedicated_participant) {
+      auto participant = dds::domain::DomainParticipant(test_options_.domain_id);
+      participant->enable();
+      return participant;
+    } else {
+      auto participant = dds::domain::find(test_options_.domain_id);
+      if (dds::core::null == participant) {
+        RCLCPP_ERROR(this->get_logger(),
+          "failed to lookup DomainParticipant. Is the application running on rmw_connextdds?");
+        throw std::runtime_error("failed to lookup DomainParticipant");
+      }
+      return participant;
     }
-    return participant;
   }
 
   // Create a custom Publisher and Subscriber and configure them so that
@@ -271,7 +282,7 @@ protected:
     const char * const qos_profile)
   {
     UNUSED_ARG(type_name);
-    UNUSED_ARG(qos_profile);
+    UNUSED_ARG(topic_name);
     using namespace dds::core;
     auto qos_provider = QosProvider::Default();
     auto writer_qos = qos_provider.datawriter_qos(qos_profile);
@@ -311,7 +322,7 @@ protected:
     const char * const qos_profile)
   {
     UNUSED_ARG(type_name);
-    UNUSED_ARG(qos_profile);
+    UNUSED_ARG(topic_name);
     using namespace dds::core;
     auto qos_provider = QosProvider::Default();
     auto reader_qos = qos_provider.datareader_qos(qos_profile);
@@ -343,7 +354,8 @@ protected:
     // and "data available".
     reader_condition_ = StatusCondition(reader_);
     reader_condition_.enabled_statuses(
-      StatusMask::subscription_matched() | StatusMask::data_available());
+      // StatusMask::subscription_matched() | StatusMask::data_available());
+      StatusMask::subscription_matched());
     reader_condition_->handler([this](){
       on_reader_active();
     });
@@ -357,21 +369,29 @@ protected:
     });
     *awaitset_ += writer_condition_;
 
-
-    // Start a watchdog timer to make sure that the test starts, because it
-    // seems like there is a race condition where some "matched" events are
-    // never notified. To keep things consistent, we attach a "watchdog guard
-    // condition" to the waitset, and we will trigger it from the timer if it
-    // detects that the test is ready, but hasn't been marked as such.
-    // The only reason to do this (instead of calling `test_start()` directly
-    // from the timer) is so that the start event is processed on one of the
-    // AsyncWaitset's threads, as it would be if all match events were notified.
+    // Start a watchdog timer to make sure that the test starts, because there
+    // is currently a race condition when using Zero-Copy where some "matched"
+    // events are never notified. To keep things consistent, we attach a
+    // "watchdog guard condition" to the waitset, and we will trigger it from
+    // the timer if it detects that the test is ready, but hasn't been marked
+    // as such. The only reason to do this (instead of calling `test_start()`
+    // directly from the timer) is so that the start event is processed on one
+    // of the AsyncWaitset's threads, as it would be if all match events were
+    // notified.
     waitset_wd_cond_->handler([this](){
-      on_watchdog_active();
+      // Reset watchdog condition
+      waitset_wd_cond_.trigger_value(false);
+      // Force test to start
+      test_start();
     });
     *awaitset_ += waitset_wd_cond_;
     waitset_wd_ = this->create_wall_timer(100ms, [this](){
-      on_watchdog_timer();
+      if (is_test_ready()) {
+        // Cancel watchdog timer
+        waitset_wd_->cancel();
+        // Trigger watchdog condition to wake up waitset
+        waitset_wd_cond_.trigger_value(true);
+      }
     });
 
     // Start waitset threads
@@ -520,27 +540,6 @@ protected:
     if ((writer_.status_changes() & StatusMask::publication_matched()).any())
     {
       check_test_state();
-    }
-  }
-
-  // Callback triggered by the watchdog timer when it detects the test to be
-  // "ready to run".
-  virtual void on_watchdog_active()
-  {
-    // Reset watchdog condition
-    waitset_wd_cond_.trigger_value(false);
-    // Force test to start
-    test_start();
-  }
-
-  // Periodic watchdog function as a workaround to possible losses of events.
-  virtual void on_watchdog_timer()
-  {
-    if (is_test_ready()) {
-      // Cancel watchdog timer
-      waitset_wd_->cancel();
-      // Trigger watchdog condition to wake up waitset
-      waitset_wd_cond_.trigger_value(true);
     }
   }
 

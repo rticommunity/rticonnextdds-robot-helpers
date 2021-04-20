@@ -22,13 +22,17 @@ include("${CONNEXT_NODE_HELPERS_DIR}/cmake/connext_add_executable.cmake")
 include("${CONNEXT_NODE_HELPERS_DIR}/cmake/connext_generate_message_typesupport_cpp.cmake")
 include("${CONNEXT_NODE_HELPERS_DIR}/cmake/connext_generate_typesupport_library.cmake")
 
-if(NOT NDDSHOME)
-  file(TO_CMAKE_PATH "$ENV{NDDSHOME}" NDDSHOME)
+if(NOT DEFINED CONNEXTDDS_DIR)
+  if(ENV{CONNEXTDDS_DIR})
+    file(TO_CMAKE_PATH "$ENV{CONNEXTDDS_DIR}" CONNEXTDDS_DIR)
+  elseif(NOT NDDSHOME)
+    file(TO_CMAKE_PATH "$ENV{NDDSHOME}" CONNEXTDDS_DIR)
+  endif()
 endif()
 
-if(NOT NDDSHOME)
+if(NOT CONNEXTDDS_DIR)
   message(FATAL_ERROR "RTI Connext DDS must be available to use this package. "
-    "Please set NDDSHOME.")
+    "Please set NDDSHOME or CONNEXTDDS_DIR.")
 endif()
 
 if(NOT CONNEXTDDS_ARCH AND ENV{CONNEXTDDS_ARCH})
