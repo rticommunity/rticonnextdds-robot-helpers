@@ -15,14 +15,14 @@
 
 namespace rti { namespace ros2 { namespace ping {
 
-template<typename T, typename A>
-class PingPongSubscriber : public PingPongTester<T, A>
+template<typename T>
+class PingPongSubscriber : public PingPongTester<T>
 {
 public:
   PingPongSubscriber(
     const char * const name,
     const rclcpp::NodeOptions & options)
-  : PingPongTester<T, A>(name, options, false /* pong */)
+  : PingPongTester<T>(name, options, false /* pong */)
   {}
 
 protected:
@@ -41,7 +41,7 @@ protected:
 
   virtual void init_test()
   {
-    PingPongTester<T, A>::init_test();
+    PingPongTester<T>::init_test();
 
     RCLCPP_INFO(this->get_logger(),
       "ping-pong subscriber ready, waiting for publisher...");

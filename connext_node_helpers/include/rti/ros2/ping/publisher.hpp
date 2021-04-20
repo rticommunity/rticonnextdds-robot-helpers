@@ -15,14 +15,14 @@
 
 namespace rti { namespace ros2 { namespace ping {
 
-template<typename T, typename A>
-class PingPongPublisher : public PingPongTester<T, A>
+template<typename T>
+class PingPongPublisher : public PingPongTester<T>
 {
 public:
   PingPongPublisher(
     const char * const name,
     const rclcpp::NodeOptions & options)
-  : PingPongTester<T, A>(name, options, true /* ping */)
+  : PingPongTester<T>(name, options, true /* ping */)
   {}
 
 protected:
@@ -36,10 +36,22 @@ protected:
   
   virtual void init_test()
   {
-    PingPongTester<T, A>::init_test();
+    PingPongTester<T>::init_test();
 
     // Start timer to periodically check exit conditions
-    this->start_exit_timer();
+    using namespace std::chrono_literals;
+
+    if (this->test_options_.max_execution_time > 0) {
+      exit_timer_ = this->create_wall_timer(1s, [this](){
+        if (this->is_test_complete())
+        {
+          // Cancel timer and mark test as complete. The process will exit
+          // after detecting the subscriber going offline.
+          exit_timer_->cancel();
+          this->test_complete();
+        }
+      });
+    }
     
     RCLCPP_INFO(this->get_logger(),
       "ping-pong publisher ready, waiting for subscriber...");
@@ -48,7 +60,7 @@ protected:
   // Overload `test_start()` to initialize test state and send an initial ping.
   virtual void test_start()
   {
-    PingPongTester<T, A>::test_start();
+    PingPongTester<T>::test_start();
     ping();
   }
 
@@ -58,7 +70,7 @@ protected:
     if (this->test_complete_) {
       print_latency(true /* final */);
     }
-    PingPongTester<T, A>::test_stop();
+    PingPongTester<T>::test_stop();
   }
 
   // Once the test is complete, we send a final ping with timestamp=0 to notify
@@ -66,7 +78,7 @@ protected:
   // the writer will also exit.
   virtual void test_complete()
   {
-    PingPongTester<T, A>::test_complete();
+    PingPongTester<T>::test_complete();
     ping(true /* final */);
   }
 
@@ -156,8 +168,10 @@ protected:
     }
 
     // Check if thest is complete, otherwise send another ping
-    if (!this->check_test_complete())
+    if (this->is_test_complete())
     {
+      test_complete();
+    } else {
       ping();
     }
   }
@@ -165,6 +179,7 @@ protected:
   uint64_t total_latency_ = 0;
   uint64_t last_print_ = 0;
   uint64_t ping_ts_ = 0;
+  rclcpp::TimerBase::SharedPtr exit_timer_;
 };
 
 }  // namespace ping

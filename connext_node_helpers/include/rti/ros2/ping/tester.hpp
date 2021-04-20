@@ -17,9 +17,11 @@
 
 #include <rti/core/cond/AsyncWaitSet.hpp>
 
-#include <rti/ros2/data/memory.hpp>
-
 #include "rclcpp/rclcpp.hpp"
+
+#ifndef UNUSED_ARG
+#define UNUSED_ARG(a_)  (void)a_
+#endif  // UNUSED_ARG
 
 namespace rti { namespace ros2 { namespace ping {
 
@@ -108,7 +110,7 @@ struct PingPongTesterOptions
   }
 };
 
-template<typename T, typename A>
+template<typename T>
 class PingPongTester : public rclcpp::Node
 {
 protected:
@@ -124,8 +126,17 @@ protected:
     PingPongTesterOptions::declare(this);
   }
 
-  // Initialize DDS entities used by the tester. Each operation is delegated to
-  // a virtual function, so that subclasses may override each step as needed.
+  // If we are using the "plain" binding this function will return a
+  // preallocated sample. If we are using Zero-Copy or Flat-Data, then this
+  // function must loan a sample from the writer.
+  virtual T * alloc_sample() = 0;
+
+  // Callback invoked every time (valid) data is received from the reader.
+  virtual void on_data(dds::sub::LoanedSamples<T> & samples) = 0;
+
+  // Initialize DDS entities and other data structures used by the tester.
+  // Each operation is delegated to a virtual function, so that subclasses may
+  // override each step as needed.
   virtual void init_test()
   {
     // Load test configuration from ROS 2 parameters
@@ -148,6 +159,20 @@ protected:
       reader_profile = &test_options_.qos_profile_ping;
     }
 
+    create_endpoints(
+      *writer_topic, *writer_profile, *reader_topic, *reader_profile);
+
+    initialize_waitset();
+
+    enable_endpoints();
+  }
+
+  virtual void create_endpoints(
+    const std::string & writer_topic,
+    const std::string & writer_profile,
+    const std::string & reader_topic,
+    const std::string & reader_profile)
+  {
     participant_ = create_participant();
 
     publisher_ = create_publisher();
@@ -156,18 +181,19 @@ protected:
 
     writer_ = create_writer(
       test_options_.type_name.c_str(),
-      writer_topic->c_str(),
-      writer_profile->c_str());
+      writer_topic.c_str(),
+      writer_profile.c_str());
 
     reader_ = create_reader(
       test_options_.type_name.c_str(),
-      reader_topic->c_str(),
-      reader_profile->c_str());
+      reader_topic.c_str(),
+      reader_profile.c_str());
+  }
 
-    prealloc_sample();
-
-    initialize_waitset();
-
+  // The endpoints are not automatically "enabled" by DDS so that we may set up
+  // all our listeners before they are, and not risk missing any notification.
+  virtual void enable_endpoints()
+  {
     publisher_->enable();
     subscriber_->enable();
     writer_->enable();
@@ -182,8 +208,8 @@ protected:
     test_active_ = false;
 
     // Disable all events on status conditions
-    reader_condition_.enabled_statuses(StatusMask::none());
-    writer_condition_.enabled_statuses(StatusMask::none());
+    // reader_condition_.enabled_statuses(StatusMask::none());
+    // writer_condition_.enabled_statuses(StatusMask::none());
     rclcpp::shutdown();
   }
 
@@ -232,12 +258,22 @@ protected:
     const char * const topic_name,
     const char * const qos_profile)
   {
+    dds::topic::Topic<T> topic_ping(participant_, topic_name, type_name); 
+    auto writer_qos = load_writer_qos(type_name, topic_name, qos_profile);
+    return dds::pub::DataWriter<T>(publisher_, topic_ping, writer_qos);
+  }
+
+  // Loading of the writer's qos is delegated to a separate function so that it
+  // may be overloaded by a subclass.
+  virtual dds::pub::qos::DataWriterQos load_writer_qos(
+    const char * const type_name,
+    const char * const topic_name,
+    const char * const qos_profile)
+  {
+    UNUSED_ARG(type_name);
+    UNUSED_ARG(qos_profile);
     using namespace dds::core;
-
-    dds::topic::Topic<T> topic_ping(participant_, topic_name, type_name);
-    
     auto qos_provider = QosProvider::Default();
-
     auto writer_qos = qos_provider.datawriter_qos(qos_profile);
     // Only keep the latest written sample
     writer_qos << policy::History(policy::HistoryKind::KEEP_LAST, 1);
@@ -252,8 +288,7 @@ protected:
     writer_qos << props;
     // Use transient local Durability
     writer_qos << policy::Durability::TransientLocal();
-
-    return dds::pub::DataWriter<T>(publisher_, topic_ping, writer_qos);
+    return writer_qos;
   }
 
   // Create a DataReader with "transient local" durability so we can receive the
@@ -263,12 +298,22 @@ protected:
     const char * const topic_name,
     const char * const qos_profile)
   {
-    using namespace dds::core;
-
     dds::topic::Topic<T> topic_pong(participant_, topic_name, type_name);
-    
-    auto qos_provider = QosProvider::Default();
+    auto reader_qos = load_reader_qos(type_name, topic_name, qos_profile);
+    return dds::sub::DataReader<T>(subscriber_, topic_pong, reader_qos);
+  }
 
+  // Loading of the reader's qos is delegated to a separate function so that it
+  // may be overloaded by a subclass.
+  virtual dds::sub::qos::DataReaderQos load_reader_qos(
+    const char * const type_name,
+    const char * const topic_name,
+    const char * const qos_profile)
+  {
+    UNUSED_ARG(type_name);
+    UNUSED_ARG(qos_profile);
+    using namespace dds::core;
+    auto qos_provider = QosProvider::Default();
     auto reader_qos = qos_provider.datareader_qos(qos_profile);
     // Only keep the latest received sample
     reader_qos << policy::History(policy::HistoryKind::KEEP_LAST, 1);
@@ -279,26 +324,7 @@ protected:
     reader_qos << dr_limits;
     // Use transient local Durability
     reader_qos << policy::Durability::TransientLocal();
-
-    return dds::sub::DataReader<T>(subscriber_, topic_pong, reader_qos);
-  }
-
-  // Depending on the allocator, we might want to preallocate and cache a sample
-  // to be used later for testing. If allowed (i.e. if using "zero copy", or
-  // "flat data"), the allocator should rely on loaning samples from the writer
-  // as needed, making this operation a no-op.
-  virtual void prealloc_sample()
-  {
-    // Ask sample allocator to preallocate a sample if needed.
-    cached_sample_ = A::prealloc(writer_);
-  }
-
-  // Helper function that can be called to request the allocator to allocate a
-  // sample, either by loaning it from the writer, or by reusing a preallocated
-  // one.
-  virtual T * alloc_sample()
-  {
-    return A::alloc(this->writer_, this->cached_sample_);
+    return reader_qos;
   }
 
   // Create an AsyncWaitSet to process events on dedicated pool of user threads,
@@ -331,15 +357,19 @@ protected:
     });
     *awaitset_ += writer_condition_;
 
-    // Attach a "watchdog" condition to compensate for a possible race condition
+
+    // Start a watchdog timer to make sure that the test starts, because it
+    // seems like there is a race condition where some "matched" events are
+    // never notified. To keep things consistent, we attach a "watchdog guard
+    // condition" to the waitset, and we will trigger it from the timer if it
+    // detects that the test is ready, but hasn't been marked as such.
+    // The only reason to do this (instead of calling `test_start()` directly
+    // from the timer) is so that the start event is processed on one of the
+    // AsyncWaitset's threads, as it would be if all match events were notified.
     waitset_wd_cond_->handler([this](){
       on_watchdog_active();
     });
     *awaitset_ += waitset_wd_cond_;
-
-    // Start a watchdog timer to make sure that the test starts, because it
-    // seems like there is a race condition where some "matched" events are
-    // never notified.
     waitset_wd_ = this->create_wall_timer(100ms, [this](){
       on_watchdog_timer();
     });
@@ -348,21 +378,7 @@ protected:
     awaitset_->start();
   }
 
-  // Start a timer to force the test to exit after the maximum execution time
-  // has expired.
-  virtual void start_exit_timer()
-  {
-    using namespace std::chrono_literals;
-
-    if (test_options_.max_execution_time > 0) {
-      exit_timer_ = this->create_wall_timer(1s, [this](){
-        if (check_test_complete()) {
-          exit_timer_->cancel();
-        }
-      });
-    }
-  }
-
+  // A simple wrapper to 
   virtual uint64_t ts_now()
   {
     return this->participant_->current_time().to_microsecs();
@@ -453,24 +469,6 @@ protected:
     }
   }
 
-  // Called before sending a new ping. Return true if the test is complete,
-  // informing the caller not to start a new iteration of the test.
-  virtual bool check_test_complete()
-  {
-    if (is_test_complete())
-    {
-      test_complete();
-      return true;
-    }
-    return false;
-  }
-
-  // Callback invoked every time data is received from the reader.
-  virtual void on_data(dds::sub::LoanedSamples<T> & samples)
-  {
-    (void)samples;
-  }
-
   // Default handler for "data available" events which calls take() to reset
   // the status flag on the reader. Subclasses will tipically overload the
   // on_data() callback.
@@ -485,7 +483,7 @@ protected:
       // An "invalid" sample generally indicates a state transition from an
       // unmatched/not-alive remote writer. Check this is expected (e.g if the
       // test has already been completed), or terminate the test early otherwise.
-      if (!check_test_complete()) {
+      if (!is_test_complete()) {
         RCLCPP_ERROR(this->get_logger(), "lost peer before end of test");
         test_stop();
       }
@@ -560,11 +558,9 @@ protected:
   dds::sub::DataReader<T> reader_{nullptr};
   dds::core::cond::StatusCondition reader_condition_{nullptr};
   dds::core::cond::StatusCondition writer_condition_{nullptr};
-  T * cached_sample_{nullptr};
   std::unique_ptr<rti::core::cond::AsyncWaitSet> awaitset_;
   dds::core::cond::GuardCondition waitset_wd_cond_;
   rclcpp::TimerBase::SharedPtr waitset_wd_;
-  rclcpp::TimerBase::SharedPtr exit_timer_;
 };
 
 }  // namespace ping

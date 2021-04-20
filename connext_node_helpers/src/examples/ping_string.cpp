@@ -23,11 +23,8 @@
 /******************************************************************************
  * PingPongPublisher implementation for std_msgs::msg::String
  ******************************************************************************/
-template<typename T>
-using BasePingPublisher =
-  rti::ros2::ping::PingPongPublisher<T, rti::ros2::data::DataMemoryDynamic<T>>;
-
-class StringPingPublisher : public BasePingPublisher<std_msgs::msg::String>
+class StringPingPublisher :
+  public rti::ros2::ping::PingPongPublisher<std_msgs::msg::String>
 {
 public:
   CONNEXT_NODE_HELPERS_PUBLIC
@@ -38,6 +35,11 @@ public:
   }
 
 protected:
+  virtual std_msgs::msg::String * alloc_sample()
+  {
+    return &msg_;
+  }
+
   virtual void prepare_ping(std_msgs::msg::String & ping, const bool final)
   {
     if (final) {
@@ -55,6 +57,8 @@ protected:
   {
     pong_timestamp = std::stoull(pong_samples[0].data().data(), nullptr, 0);
   }
+
+  std_msgs::msg::String msg_;
 };
 
 RCLCPP_COMPONENTS_REGISTER_NODE(StringPingPublisher)
@@ -62,11 +66,8 @@ RCLCPP_COMPONENTS_REGISTER_NODE(StringPingPublisher)
 /******************************************************************************
  * PingPongSubscriber implementation for std_msgs::msg::String
  ******************************************************************************/
-template<typename T>
-using BasePingSubscriber =
-  rti::ros2::ping::PingPongSubscriber<T, rti::ros2::data::DataMemoryDynamic<T>>;
-
-class StringPingSubscriber : public BasePingSubscriber<std_msgs::msg::String>
+class StringPingSubscriber :
+  public rti::ros2::ping::PingPongSubscriber<std_msgs::msg::String>
 {
 public:
   CONNEXT_NODE_HELPERS_PUBLIC
@@ -77,6 +78,11 @@ public:
   }
 
 protected:
+  virtual std_msgs::msg::String * alloc_sample()
+  {
+    return &msg_;
+  }
+
   virtual void prepare_pong(
     std_msgs::msg::String * const pong, const uint64_t ping_ts)
   {
@@ -96,6 +102,8 @@ protected:
   {
     msg << ping_samples[0].data().data();
   }
+
+  std_msgs::msg::String msg_;
 };
 
 RCLCPP_COMPONENTS_REGISTER_NODE(StringPingSubscriber)
