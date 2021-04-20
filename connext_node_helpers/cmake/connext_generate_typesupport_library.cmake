@@ -15,7 +15,7 @@
 function(connext_generate_typesupport_library lib)
   cmake_parse_arguments(_tslib
     "ZEROCOPY;SERVER" # boolean arguments
-    "INSTALL_PREFIX" # single value arguments
+    "INSTALL_PREFIX;WORKING_DIRECTORY" # single value arguments
     "MESSAGES;SERVICES;DEPENDS;IDLS;INCLUDES" # multi-value arguments
     ${ARGN} # current function arguments
     )
@@ -49,6 +49,7 @@ function(connext_generate_typesupport_library lib)
     string(REGEX REPLACE "^${_msg_pkg}/" "" _msg_name "${_msg}")
     set(_msg_includes ${_tslib_MESSAGES})
     list(REMOVE_ITEM _msg_includes "${_msg_pkg}")
+    string(REGEX REPLACE "/" "_" _msg_tgt "${_msg}")
     
     connext_generate_message_typesupport_cpp(${_msg_name}
       PACKAGE ${_msg_pkg}
@@ -56,6 +57,8 @@ function(connext_generate_typesupport_library lib)
       OUTPUT_DIR ${_tslib_OUTPUT_DIR}
       INSTALL_PREFIX ${_tslib_INSTALL_PREFIX}
       DEPENDS ${_tslib_DEPENDS}
+      TARGET rtiddsgen_${_msg_tgt}
+      WORKING_DIRECTORY ${_tslib_WORKING_DIRECTORY}
       ${_tslib_SERVER_OPT})
     list(APPEND _tslib_GENERATED_FILES ${${_msg_pkg}_${_msg_name}_FILES})
   endforeach()
@@ -78,18 +81,23 @@ function(connext_generate_typesupport_library lib)
       get_filename_component(_idl_inc_dir "${_idl_PATH}" DIRECTORY)
     endif()
 
+    get_filename_component(_idl_inc_dir "${_idl_inc_dir}" REALPATH)
     list(APPEND _idl_includes "${_idl_inc_dir}")
   endforeach()
+  list(REMOVE_DUPLICATES _idl_includes)
   
   # Generate type support for all IDL Files
   # These are passed in the form <idl-file>[@<optional-include-prefix>]
   foreach(_idl_ENTRY ${_tslib_IDLS})
     string(REGEX REPLACE "@.*$" "" _idl_PATH "${_idl_ENTRY}")
     string(REGEX REPLACE "^${_idl_PATH}" "" _idl_PREFIX "${_idl_ENTRY}")
-    if(NOT "${_idl_PREFIX}" STREQUAL "")
-      string(REGEX REPLACE "^@" "" _idl_PREFIX "${_idl_PREFIX}")
-    endif()
     get_filename_component(_idl_file "${_idl_PATH}" NAME)
+    if(_idl_PREFIX)
+      string(REGEX REPLACE "^@" "" _idl_PREFIX "${_idl_PREFIX}")
+      string(REGEX REPLACE "[/.]" "_" _idl_tgt "rtiddsgen_${_idl_PREFIX}/${_idl_file}")
+    else()
+      string(REGEX REPLACE "[/.]" "_" _idl_tgt "rtiddsgen_${_idl_file}")
+    endif()
     string(REGEX REPLACE "[.]idl$" "" _idl_type "${_idl_file}")
 
     connext_generate_message_typesupport_cpp(${_idl_PATH}
@@ -98,6 +106,7 @@ function(connext_generate_typesupport_library lib)
       OUTPUT_DIR ${_tslib_OUTPUT_DIR}
       INSTALL_PREFIX ${_tslib_INSTALL_PREFIX}
       DEPENDS ${_tslib_DEPENDS}
+      TARGET ${_idl_tgt}
       ${_tslib_SERVER_OPT})
     
     if(NOT "${_idl_PREFIX}" STREQUAL "")
@@ -114,6 +123,7 @@ function(connext_generate_typesupport_library lib)
   add_library(${lib} SHARED
     ${_tslib_GENERATED_FILES})
   target_link_libraries(${lib} RTIConnextDDS::cpp2_api)
+  add_dependencies(${lib} rtiddsgen)
   if(_tslib_ZEROCOPY)
     target_link_libraries(${lib} RTIConnextDDS::metp)
   endif()

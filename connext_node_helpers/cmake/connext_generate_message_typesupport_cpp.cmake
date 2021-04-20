@@ -15,7 +15,7 @@
 function(connext_generate_message_typesupport_cpp type)
   cmake_parse_arguments(_idl
     "SERVER" # boolean arguments
-    "PACKAGE;OUTPUT_DIR;INSTALL_PREFIX" # single value arguments
+    "PACKAGE;OUTPUT_DIR;INSTALL_PREFIX;TARGET;WORKING_DIRECTORY" # single value arguments
     "INCLUDES;DEPENDS" # multi-value arguments
     ${ARGN} # current function arguments
     )
@@ -50,11 +50,30 @@ macro(_connext_generate_message_typesupport_cpp_impl)
 
   file(MAKE_DIRECTORY "${_idl_OUTPUT_DIR}/${_idl_NS}")
 
+  if(NOT _idl_WORKING_DIRECTORY)
+    set(_idl_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+  endif()
+  # Simplify include path based on WORKING_DIRECTORY to try to shorten it a bit
+  set(pkg_includes_short)
+  foreach(_idl_inc ${pkg_includes})
+    if(_idl_inc STREQUAL "-I")
+      continue()
+    endif()
+    if(_idl_inc MATCHES "^${_idl_WORKING_DIRECTORY}")
+      string(REGEX REPLACE "^${_idl_WORKING_DIRECTORY}/" "" _idl_inc "${_idl_inc}")
+    endif()
+    list(APPEND pkg_includes_short "${_idl_inc}")
+  endforeach()
+  list(REMOVE_DUPLICATES pkg_includes_short)
+  set(pkg_includes)
+  foreach(_idl_inc ${pkg_includes_short})
+    list(APPEND pkg_includes "-I" "${_idl_inc}")
+  endforeach()
 
   if(_idl_SERVER)
-    set(rtiddsgen "rtiddsgen_server")
+    set(rtiddsgen rtiddsgen_server)
   else()
-    set(rtiddsgen "rtiddsgen")
+    set(rtiddsgen rtiddsgen)
   endif()
 
   set(_idl_CMD)
@@ -68,9 +87,25 @@ macro(_connext_generate_message_typesupport_cpp_impl)
     ${pkg_includes}
     "${_idl_FILE}")
 
+  # Add a top level target to run code-generation
+  if(NOT TARGET rtiddsgen)
+    add_custom_target(rtiddsgen ALL)
+  endif()
+  # if(_idl_SERVER AND NOT TARGET rtiddsgen_server)
+  #   add_custom_target(rtiddsgen_server
+  #     COMMAND rtiddsgen_server -language C++11)
+  #   add_dependencies(rtiddsgen rtiddsgen_server)
+  # endif()
+
   add_custom_command(OUTPUT ${generated_files}
     COMMAND ${_idl_CMD}
-    DEPENDS ${_idl_FILE} ${_idl_DEPENDS})
+    MAIN_DEPENDENCY ${_idl_FILE}
+    DEPENDS ${_idl_FILE} ${_idl_DEPENDS}
+    WORKING_DIRECTORY ${_idl_WORKING_DIRECTORY})
+
+  add_custom_target(${_idl_TARGET}
+    DEPENDS ${generated_files})
+  add_dependencies(rtiddsgen ${_idl_TARGET})
 
   set(${_idl_OUTPUT_VAR} ${generated_files} PARENT_SCOPE)
 
@@ -78,6 +113,7 @@ macro(_connext_generate_message_typesupport_cpp_impl)
   install(
     FILES ${_idl_HEADERS}
     DESTINATION "${_idl_INSTALL_PREFIX}/${_idl_NS}")
+ 
 endmacro()
 
 macro(_connext_generate_message_typesupport_cpp_ros)
@@ -114,6 +150,10 @@ macro(_connext_generate_message_typesupport_cpp_ros)
     list(APPEND pkg_includes "-I" "${p}")
   endforeach()
 
+  if(NOT _idl_TARGET)
+    string(REGEX REPLACE "/" "_" _idl_TARGET "${_idl_PACKAGE}/${type}")
+  endif()
+
   _connext_generate_message_typesupport_cpp_impl()
 endmacro()
 
@@ -149,8 +189,14 @@ macro(_connext_generate_message_typesupport_cpp_dds)
   if(NOT "${_idl_PACKAGE}" STREQUAL "")
     string(REPLACE "/" "_" _idl_package "${_idl_PACKAGE}")
     set(_idl_OUTPUT_VAR ${_idl_package}_${type}_FILES)
+    if(NOT _idl_TARGET)
+      set(_idl_TARGET "rtiddsgen_${_idl_package}")
+    endif()
   else()
     set(_idl_OUTPUT_VAR ${type}_FILES)
+    if(NOT _idl_TARGET)
+      set(_idl_TARGET "rtiddsgen_${type}")
+    endif()
   endif()
 
   _connext_generate_message_typesupport_cpp_impl()
