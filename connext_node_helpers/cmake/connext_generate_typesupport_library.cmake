@@ -15,7 +15,7 @@
 function(connext_generate_typesupport_library lib)
   cmake_parse_arguments(_tslib
     "ZEROCOPY;SERVER" # boolean arguments
-    "INSTALL_PREFIX;WORKING_DIRECTORY" # single value arguments
+    "INSTALL_PREFIX;WORKING_DIRECTORY;EXPORT_TYPES_LIST" # single value arguments
     "MESSAGES;SERVICES;DEPENDS;IDLS;INCLUDES" # multi-value arguments
     ${ARGN} # current function arguments
     )
@@ -42,6 +42,8 @@ function(connext_generate_typesupport_library lib)
     set(_tslib_SERVER_OPT SERVER)
   endif()
 
+  set(_tslib_TYPES)
+
   # Generate type supports for all types
   set(_tslib_GENERATED_FILES)
   foreach(_msg ${_tslib_MESSAGES})
@@ -61,6 +63,8 @@ function(connext_generate_typesupport_library lib)
       WORKING_DIRECTORY ${_tslib_WORKING_DIRECTORY}
       ${_tslib_SERVER_OPT})
     list(APPEND _tslib_GENERATED_FILES ${${_msg_pkg}_${_msg_name}_FILES})
+
+    list(APPEND _tslib_TYPES "${_msg}")
   endforeach()
 
 
@@ -107,6 +111,7 @@ function(connext_generate_typesupport_library lib)
       INSTALL_PREFIX ${_tslib_INSTALL_PREFIX}
       DEPENDS ${_tslib_DEPENDS}
       TARGET ${_idl_tgt}
+      WORKING_DIRECTORY ${_tslib_WORKING_DIRECTORY}
       ${_tslib_SERVER_OPT})
     
     if(NOT "${_idl_PREFIX}" STREQUAL "")
@@ -117,6 +122,12 @@ function(connext_generate_typesupport_library lib)
     endif()
 
     list(APPEND _tslib_GENERATED_FILES ${${_outvar}})
+
+    if(_idl_PREFIX)
+      list(APPEND _tslib_TYPES "${_idl_PREFIX}/${_idl_type}")
+    else()
+      list(APPEND _tslib_TYPES "${_idl_type}")
+    endif()
   endforeach()
 
   # Define library target to build all generated files into shared library
@@ -137,4 +148,8 @@ function(connext_generate_typesupport_library lib)
     ARCHIVE DESTINATION lib
     LIBRARY DESTINATION lib
     RUNTIME DESTINATION bin)
+  
+  if(_tslib_EXPORT_TYPES_LIST)
+    set(${_tslib_EXPORT_TYPES_LIST} ${_tslib_TYPES} PARENT_SCOPE)
+  endif()
 endfunction()

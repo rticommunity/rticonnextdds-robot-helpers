@@ -30,8 +30,7 @@ find_package(rclcpp REQUIRED)
 find_package(rti_connext_dds_cmake_module REQUIRED)
 find_package(rmw_connextdds REQUIRED)
 
-list(INSERT CMAKE_MODULE_PATH 0 "${CONNEXTDDS_DIR}/resource/cmake")
-message(STATUS "loading RTI Connext DDS with `rti_connext_cmake_module`")
+list(INSERT CMAKE_MODULE_PATH 0 "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 find_package(RTIConnextDDS REQUIRED)
 if(NOT RTIConnextDDS_FOUND)
   message(FATAL_ERROR "RTI Connext DDS (${CONNEXTDDS_ARCH}) not found in "
