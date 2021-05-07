@@ -354,8 +354,7 @@ protected:
     // and "data available".
     reader_condition_ = StatusCondition(reader_);
     reader_condition_.enabled_statuses(
-      // StatusMask::subscription_matched() | StatusMask::data_available());
-      StatusMask::subscription_matched());
+      StatusMask::subscription_matched() | StatusMask::data_available());
     reader_condition_->handler([this](){
       on_reader_active();
     });
