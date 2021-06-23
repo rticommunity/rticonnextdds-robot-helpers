@@ -19,6 +19,11 @@ function(connext_generate_message_typesupport_cpp type)
     "INCLUDES;DEPENDS" # multi-value arguments
     ${ARGN} # current function arguments
     )
+  
+  if(NOT _idl_WORKING_DIRECTORY)
+    set(_idl_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+  endif()
+  get_filename_component(_idl_WORKING_DIRECTORY "${_idl_WORKING_DIRECTORY}" REALPATH)
 
   if(type MATCHES "[.]idl$")
     _connext_generate_message_typesupport_cpp_dds()
@@ -50,9 +55,6 @@ macro(_connext_generate_message_typesupport_cpp_impl)
 
   file(MAKE_DIRECTORY "${_idl_OUTPUT_DIR}/${_idl_NS}")
 
-  if(NOT _idl_WORKING_DIRECTORY)
-    set(_idl_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
-  endif()
   # Simplify include path based on WORKING_DIRECTORY to try to shorten it a bit
   set(pkg_includes_short)
   foreach(_idl_inc ${pkg_includes})
@@ -161,7 +163,9 @@ macro(_connext_generate_message_typesupport_cpp_dds)
   # ${type} contains the path to the IDL file
   get_filename_component(_idl_FILE "${type}" REALPATH)
 
-  message(STATUS "rtiddsgen(IDL) ${_idl_FILE} [${_idl_PACKAGE}]")
+  # Shorten IDL file path for a prettier print out
+  string(REPLACE "${_idl_WORKING_DIRECTORY}/" "" _output "${_idl_FILE}")
+  message(STATUS "rtiddsgen(IDL) ${_output} [${_idl_PACKAGE}]")
 
   # Update ${type} to the name of input IDL file without extension
   get_filename_component(type "${type}" NAME)
