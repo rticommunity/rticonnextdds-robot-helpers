@@ -1,4 +1,4 @@
-# (c) 2021 Copyright, Real-Time Innovations, Inc.  All rights reserved.
+# Copyright 2021 Real-Time Innovations, Inc.  All rights reserved.
 #
 # RTI grants Licensee a license to use, modify, compile, and create derivative
 # works of the Software.  Licensee has the right to distribute object form
@@ -14,12 +14,12 @@
 ################################################################################
 function(connext_generate_message_typesupport_cpp type)
   cmake_parse_arguments(_idl
-    "SERVER" # boolean arguments
+    "SERVER;SERVICE" # boolean arguments
     "PACKAGE;OUTPUT_DIR;INSTALL_PREFIX;TARGET;WORKING_DIRECTORY" # single value arguments
     "INCLUDES;DEPENDS" # multi-value arguments
     ${ARGN} # current function arguments
-    )
-  
+  )
+
   if(NOT _idl_WORKING_DIRECTORY)
     set(_idl_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
   endif()
@@ -115,7 +115,7 @@ macro(_connext_generate_message_typesupport_cpp_impl)
   install(
     FILES ${_idl_HEADERS}
     DESTINATION "${_idl_INSTALL_PREFIX}/${_idl_NS}")
- 
+
 endmacro()
 
 macro(_connext_generate_message_typesupport_cpp_ros)
@@ -131,8 +131,14 @@ macro(_connext_generate_message_typesupport_cpp_ros)
   find_package(${_idl_PACKAGE} REQUIRED)
   set(_pkg_dir "${${_idl_PACKAGE}_DIR}")
   get_filename_component(_pkg_include_dir "${_pkg_dir}/../.." REALPATH)
-  get_filename_component(_idl_FILE "${_pkg_dir}/../msg/${type}.idl" REALPATH)
-  set(_idl_NS "${_idl_PACKAGE}/msg/")
+
+  if(_idl_SERVICE)
+    get_filename_component(_idl_FILE "${_pkg_dir}/../srv/${type}.idl" REALPATH)
+    set(_idl_NS "${_idl_PACKAGE}/srv/")
+  else()
+    get_filename_component(_idl_FILE "${_pkg_dir}/../msg/${type}.idl" REALPATH)
+    set(_idl_NS "${_idl_PACKAGE}/msg/")
+  endif()
 
   # Set OUTPUT_VAR based on "<pkg>_<type>_FILES"
   set(_idl_OUTPUT_VAR ${_idl_PACKAGE}_${type}_FILES)
@@ -176,7 +182,7 @@ macro(_connext_generate_message_typesupport_cpp_dds)
   set(pkg_includes)
   foreach(inc ${_idl_INCLUDES})
     # normalize path and resolve symlinks for good measure
-    get_filename_component(f_inc "${inc}" REALPATH) 
+    get_filename_component(f_inc "${inc}" REALPATH)
     list(APPEND pkg_includes "-I" "${f_inc}")
   endforeach()
 

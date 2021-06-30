@@ -1,4 +1,4 @@
-# (c) 2021 Copyright, Real-Time Innovations, Inc.  All rights reserved.
+# Copyright 2021 Real-Time Innovations, Inc.  All rights reserved.
 #
 # RTI grants Licensee a license to use, modify, compile, and create derivative
 # works of the Software.  Licensee has the right to distribute object form
@@ -49,7 +49,9 @@ list(INSERT CMAKE_MODULE_PATH 0 "${CONNEXT_NODE_HELPERS_DIR}/cmake")
 # CONNEXTDDS_COMPONENTS before loading `connext_node_helpers`.
 if("${CONNEXTDDS_COMPONENTS}" STREQUAL "")
   set(CONNEXTDDS_COMPONENTS
-    metp)
+    metp
+    messaging_api
+  )
 endif()
 
 set(CONNEXTDDS_COMPONENTS ${CONNEXTDDS_COMPONENTS}

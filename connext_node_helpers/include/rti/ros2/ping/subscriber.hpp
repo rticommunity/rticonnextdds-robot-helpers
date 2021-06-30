@@ -1,4 +1,4 @@
-// (c) 2021 Copyright, Real-Time Innovations, Inc.  All rights reserved.
+// Copyright 2021 Real-Time Innovations, Inc.  All rights reserved.
 //
 // RTI grants Licensee a license to use, modify, compile, and create derivative
 // works of the Software.  Licensee has the right to distribute object form
@@ -8,13 +8,14 @@
 // not be liable for any incidental or consequential damages arising out of the
 // use or inability to use the software.
 
-#ifndef CONNEXT_NODE_HELPERS__RTI_ROS2_PING_SUBSCRIBER_HPP
-#define CONNEXT_NODE_HELPERS__RTI_ROS2_PING_SUBSCRIBER_HPP
+#ifndef RTI__ROS2__PING__SUBSCRIBER_HPP_
+#define RTI__ROS2__PING__SUBSCRIBER_HPP_
 
 #include <rti/ros2/ping/tester.hpp>
 
+/* *INDENT-OFF* */
 namespace rti { namespace ros2 { namespace ping {
-
+/* *INDENT-ON* */
 template<typename T>
 class PingPongSubscriber : public PingPongTester<T>
 {
@@ -43,7 +44,8 @@ protected:
   {
     PingPongTester<T>::init_test();
 
-    RCLCPP_INFO(this->get_logger(),
+    RCLCPP_INFO(
+      this->get_logger(),
       "ping-pong subscriber ready, waiting for publisher...");
   }
 
@@ -73,13 +75,12 @@ protected:
     auto pong = this->alloc_sample();
 
     prepare_pong(pong, ping_ts);
-    
+
     this->writer_.write(*pong);
   }
 };
-
 }  // namespace ping
 }  // namespace ros2
 }  // namespace rti
 
-#endif  // CONNEXT_NODE_HELPERS__RTI_ROS2_PING_SUBSCRIBER_HPP
+#endif  // RTI__ROS2__PING__SUBSCRIBER_HPP_

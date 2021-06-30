@@ -1,4 +1,4 @@
-# (c) 2021 Copyright, Real-Time Innovations, Inc.  All rights reserved.
+# Copyright 2021 Real-Time Innovations, Inc.  All rights reserved.
 #
 # RTI grants Licensee a license to use, modify, compile, and create derivative
 # works of the Software.  Licensee has the right to distribute object form
@@ -18,12 +18,12 @@ function(connext_generate_typesupport_library lib)
     "INSTALL_PREFIX;WORKING_DIRECTORY;EXPORT_TYPES_LIST" # single value arguments
     "MESSAGES;SERVICES;DEPENDS;IDLS;INCLUDES" # multi-value arguments
     ${ARGN} # current function arguments
-    )
-  
+  )
+
   if("${_args_INSTALL_PREFIX}" STREQUAL "")
     set(_args_INSTALL_PREFIX include)
   endif()
-  
+
   # Collect list of all included packages
   set(_tslib_PACKAGES)
   foreach(_msg ${_args_MESSAGES} ${_args_SERVICES})
@@ -43,18 +43,41 @@ function(connext_generate_typesupport_library lib)
   endif()
 
   set(_tslib_TYPES)
-
-  # Generate type supports for all types
   set(_tslib_GENERATED_FILES)
+
+  # Generate type supports for all message types
   foreach(_msg ${_args_MESSAGES})
     string(REGEX REPLACE "/[^/]*$" "" _msg_pkg "${_msg}")
     string(REGEX REPLACE "^${_msg_pkg}/" "" _msg_name "${_msg}")
     set(_msg_includes ${_args_MESSAGES})
     list(REMOVE_ITEM _msg_includes "${_msg_pkg}")
     string(REGEX REPLACE "/" "_" _msg_tgt "${_msg}")
-    
+
     connext_generate_message_typesupport_cpp(${_msg_name}
       PACKAGE ${_msg_pkg}
+      INCLUDES ${_msg_includes} ${_args_INCLUDES}
+      OUTPUT_DIR ${_tslib_OUTPUT_DIR}
+      INSTALL_PREFIX ${_args_INSTALL_PREFIX}
+      DEPENDS ${_args_DEPENDS}
+      TARGET rtiddsgen_${_msg_tgt}
+      WORKING_DIRECTORY ${_args_WORKING_DIRECTORY}
+      ${_tslib_SERVER_OPT})
+    list(APPEND _tslib_GENERATED_FILES ${${_msg_pkg}_${_msg_name}_FILES})
+
+    list(APPEND _tslib_TYPES "${_msg}")
+  endforeach()
+
+  # Generate type supports for all service types
+  foreach(_msg ${_args_SERVICES})
+    string(REGEX REPLACE "/[^/]*$" "" _msg_pkg "${_msg}")
+    string(REGEX REPLACE "^${_msg_pkg}/" "" _msg_name "${_msg}")
+    set(_msg_includes ${_args_MESSAGES})
+    list(REMOVE_ITEM _msg_includes "${_msg_pkg}")
+    string(REGEX REPLACE "/" "_" _msg_tgt "${_msg}")
+
+    connext_generate_message_typesupport_cpp(${_msg_name}
+      PACKAGE ${_msg_pkg}
+      SERVICE
       INCLUDES ${_msg_includes} ${_args_INCLUDES}
       OUTPUT_DIR ${_tslib_OUTPUT_DIR}
       INSTALL_PREFIX ${_args_INSTALL_PREFIX}
@@ -91,7 +114,7 @@ function(connext_generate_typesupport_library lib)
     endforeach()
     list(REMOVE_DUPLICATES _idl_includes)
   endif()
-  
+
   # Generate type support for all IDL Files
   # These are passed in the form <idl-file>[@<optional-include-prefix>]
   foreach(_idl_ENTRY ${_args_IDLS})
@@ -115,7 +138,7 @@ function(connext_generate_typesupport_library lib)
       TARGET ${_idl_tgt}
       WORKING_DIRECTORY ${_args_WORKING_DIRECTORY}
       ${_tslib_SERVER_OPT})
-    
+
     if(NOT "${_idl_PREFIX}" STREQUAL "")
       string(REPLACE "/" "_" _idl_prefix "${_idl_PREFIX}")
       set(_outvar "${_idl_prefix}_${_idl_type}_FILES")
@@ -150,7 +173,7 @@ function(connext_generate_typesupport_library lib)
     ARCHIVE DESTINATION lib
     LIBRARY DESTINATION lib
     RUNTIME DESTINATION bin)
-  
+
   if(_args_EXPORT_TYPES_LIST)
     set(${_args_EXPORT_TYPES_LIST} ${_tslib_TYPES} PARENT_SCOPE)
   endif()

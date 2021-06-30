@@ -1,4 +1,4 @@
-# (c) 2021 Copyright, Real-Time Innovations, Inc.  All rights reserved.
+# Copyright 2021 Real-Time Innovations, Inc.  All rights reserved.
 #
 # RTI grants Licensee a license to use, modify, compile, and create derivative
 # works of the Software.  Licensee has the right to distribute object form
@@ -19,7 +19,7 @@ function(connext_components_register_node target)
     "PLUGIN;EXECUTABLE;RESOURCE_INDEX" # single value arguments
     "" # multi-value arguments
     ${ARGN} # current function arguments
-    )
+  )
 
   # use a custom template to generate each node's main, because we must make
   # sure that the DomainParticipantFactory's global static variable is linked

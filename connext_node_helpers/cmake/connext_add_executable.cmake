@@ -1,4 +1,4 @@
-# (c) 2021 Copyright, Real-Time Innovations, Inc.  All rights reserved.
+# Copyright 2021 Real-Time Innovations, Inc.  All rights reserved.
 #
 # RTI grants Licensee a license to use, modify, compile, and create derivative
 # works of the Software.  Licensee has the right to distribute object form

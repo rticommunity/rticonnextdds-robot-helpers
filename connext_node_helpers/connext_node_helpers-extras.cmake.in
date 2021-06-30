@@ -1,4 +1,4 @@
-# (c) 2021 Copyright, Real-Time Innovations, Inc.  All rights reserved.
+# Copyright 2021 Real-Time Innovations, Inc.  All rights reserved.
 #
 # RTI grants Licensee a license to use, modify, compile, and create derivative
 # works of the Software.  Licensee has the right to distribute object form
@@ -15,7 +15,8 @@
 ################################################################################
 # Path to `<pkg-install>/share`
 # `@PROJECT_NAME@_DIR` is `<pkg-install>/share/cmake`
-get_filename_component(@PROJECT_NAME@_SHARE_DIR "${@PROJECT_NAME@_DIR}" DIRECTORY)
+get_filename_component(@PROJECT_NAME@_SHARE_DIR
+  "${@PROJECT_NAME@_DIR}" DIRECTORY)
 
 ################################################################################
 # Load RTI Connext DDS using ROS 2 package `rti_connext_dds_cmake_module`
@@ -39,7 +40,9 @@ list(INSERT CMAKE_MODULE_PATH 0 "${@PROJECT_NAME@_DIR}")
 # CONNEXTDDS_COMPONENTS before loading `connext_node_helpers`.
 if("${CONNEXTDDS_COMPONENTS}" STREQUAL "")
   set(CONNEXTDDS_COMPONENTS
-    metp)
+    metp
+    messaging_api
+  )
 endif()
 
 set(CONNEXTDDS_COMPONENTS ${CONNEXTDDS_COMPONENTS}

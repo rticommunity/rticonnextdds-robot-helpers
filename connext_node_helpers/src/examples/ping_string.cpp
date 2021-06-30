@@ -1,4 +1,4 @@
-// (c) 2021 Copyright, Real-Time Innovations, Inc.  All rights reserved.
+// Copyright 2021 Real-Time Innovations, Inc.  All rights reserved.
 //
 // RTI grants Licensee a license to use, modify, compile, and create derivative
 // works of the Software.  Licensee has the right to distribute object form
@@ -8,11 +8,11 @@
 // not be liable for any incidental or consequential damages arising out of the
 // use or inability to use the software.
 
-#include <string>
-
 #include <rti/ros2/ping/publisher.hpp>
 #include <rti/ros2/ping/subscriber.hpp>
 #include <rti/ros2/data/memory.hpp>
+
+#include <string>
 
 #include "std_msgs/msg/String.hpp"
 
@@ -23,12 +23,12 @@
 /******************************************************************************
  * PingPongPublisher implementation for std_msgs::msg::String
  ******************************************************************************/
-class StringPingPublisher :
-  public rti::ros2::ping::PingPongPublisher<std_msgs::msg::String>
+class StringPingPublisher
+  : public rti::ros2::ping::PingPongPublisher<std_msgs::msg::String>
 {
 public:
   CONNEXT_NODE_HELPERS_PUBLIC
-  StringPingPublisher(const rclcpp::NodeOptions & options)
+  explicit StringPingPublisher(const rclcpp::NodeOptions & options)
   : PingPongPublisher("string_pub", options)
   {
     this->init_test();
@@ -47,7 +47,8 @@ protected:
       return;
     }
 
-    ping.data(std::to_string(this->participant_->current_time().to_microsecs()));
+    auto participant = rti::ros2::node::dds_domain_participant(*this);
+    ping.data(std::to_string(participant.current_time().to_microsecs()));
   }
 
   // Process received pong sample and return the timestamp
@@ -66,12 +67,12 @@ RCLCPP_COMPONENTS_REGISTER_NODE(StringPingPublisher)
 /******************************************************************************
  * PingPongSubscriber implementation for std_msgs::msg::String
  ******************************************************************************/
-class StringPingSubscriber :
-  public rti::ros2::ping::PingPongSubscriber<std_msgs::msg::String>
+class StringPingSubscriber
+  : public rti::ros2::ping::PingPongSubscriber<std_msgs::msg::String>
 {
 public:
   CONNEXT_NODE_HELPERS_PUBLIC
-  StringPingSubscriber(const rclcpp::NodeOptions & options)
+  explicit StringPingSubscriber(const rclcpp::NodeOptions & options)
   : PingPongSubscriber("string_sub", options)
   {
     this->init_test();

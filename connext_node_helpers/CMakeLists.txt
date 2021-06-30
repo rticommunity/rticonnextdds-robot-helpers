@@ -1,4 +1,4 @@
-# (c) 2021 Copyright, Real-Time Innovations, Inc.  All rights reserved.
+# Copyright 2021 Real-Time Innovations, Inc.  All rights reserved.
 #
 # RTI grants Licensee a license to use, modify, compile, and create derivative
 # works of the Software.  Licensee has the right to distribute object form
@@ -31,7 +31,7 @@ find_package(rti_connext_dds_cmake_module REQUIRED)
 find_package(rmw_connextdds REQUIRED)
 
 list(INSERT CMAKE_MODULE_PATH 0 "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-find_package(RTIConnextDDS REQUIRED)
+find_package(RTIConnextDDS REQUIRED COMPONENTS messaging_api)
 if(NOT RTIConnextDDS_FOUND)
   message(FATAL_ERROR "RTI Connext DDS (${CONNEXTDDS_ARCH}) not found in "
     "'${CONNEXTDDS_DIR}'")
@@ -41,8 +41,19 @@ elseif("${RTICONNEXTDDS_VERSION}" VERSION_LESS_EQUAL "6.0.0")
   set(RTIConnextDDS_FOUND false)
 endif()
 
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/connext_node_helpers.cmake)
+
 add_library(${PROJECT_NAME} SHARED
-  src/lib.cpp
+  src/node/domain.cpp
+  src/node/qos.cpp
+  src/node/topic.cpp
+  include/rti/ros2/node/dds.hpp
+  include/rti/ros2/node/domain.hpp
+  include/rti/ros2/node/topic.hpp
+  include/rti/ros2/node/pub.hpp
+  include/rti/ros2/node/sub.hpp
+  include/rti/ros2/node/request.hpp
+  include/rti/ros2/node/event.hpp
   include/rti/ros2/data/access.hpp
   include/rti/ros2/data/memory.hpp
   include/rti/ros2/ping/tester.hpp
@@ -55,7 +66,12 @@ ament_export_dependencies(
   rti_connext_dds_cmake_module
   rmw_connextdds)
 ament_export_libraries(${PROJECT_NAME})
-target_link_libraries(${PROJECT_NAME} RTIConnextDDS::cpp2_api)
+target_link_libraries(${PROJECT_NAME}
+  # Modern C++ API
+  RTIConnextDDS::cpp2_api
+  # RTI Modern C++ Messaging API
+  RTIConnextDDS::messaging_cpp2_api
+)
 target_include_directories(${PROJECT_NAME}
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
@@ -75,13 +91,8 @@ ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
-  # the following line skips the linter which checks for copyrights
-  # uncomment the line when a copyright and license is not present in all source files
-  #set(ament_cmake_copyright_FOUND TRUE)
-  # the following line skips cpplint (only works in a git repo)
-  # uncomment the line when this package is not in a git repo
-  #set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
+  add_subdirectory(test/${PROJECT_NAME})
 endif()
 
 # Install CMake helpers
@@ -101,8 +112,6 @@ install(
 option(BUILD_EXAMPLES "Build included examples" OFF)
 
 if(BUILD_EXAMPLES)
-  include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/connext_node_helpers.cmake)
-
   find_package(rclcpp REQUIRED)
   find_package(rclcpp_components REQUIRED)
   find_package(std_msgs REQUIRED)
