@@ -4,7 +4,7 @@ This repository contains a collection of helper resources to simplify the
 implementation of ROS 2 applications which use the APIs provided by
 [RTI Connext DDS Connectivity Framework](https://www.rti.com/products).
 
-- [How to use `connext_node_helpers` in a ROS 2 package](#use-connext_node_helpers-in-a-ros-2-package)
+- [How to use `connext_node_helpers` in a ROS 2 package](#how-to-use-connext_node_helpers-in-a-ros-2-package)
 - [Connext Node API](#connext-node-api)
   - [DataWriter Helpers](#datawriter-helpers)
     - [create_datawriter()](#create_datawriter)
@@ -106,19 +106,19 @@ similarly to how you normally use the `rclcpp` API:
 
 class MyNode : public rclcpp::Node
 {
-  using TopicType = std_msgs::msg::String;
-
 public:
+  using std_msgs::msg::String;
+
   explicit MyNode(const rclcpp::NodeOptions & options)
   : Node("my_node", options)
   {
-    writer_ = rti::ros2::node::create_datawriter<TopicType>(*this, "chatter");
+    writer_ = rti::ros2::node::create_datawriter<String>(*this, "chatter");
     
-    reader_ = rti::ros2::node::create_datareader<TopicType>(*this, "chatter");
+    reader_ = rti::ros2::node::create_datareader<String>(*this, "chatter");
     
-    on_data_event_ = events_.notify_data<TopicType>(reader_,
+    on_data_event_ = events_.notify_data<String>(reader_,
       [this](
-          dds::sub::DataReader<TopicType> &,
+          dds::sub::DataReader<String> &,
           dds::sub::cond::ReadCondition & condition)
       {
         auto samples = reader_.select().condition(condition).read();
@@ -128,24 +128,24 @@ public:
       });
     
     using namespace std::chrono_literals;
-    data_timer_ = this->create_wall_timer(1s,
+    publish_timer_ = this->create_wall_timer(1s,
       [this](){
-        // TODO update message before publishing
-        writer_.write(message_);
+        String msg("Hello Connext!");
+        writer_.write(msg);
       });
   }
 
 private:
-  void on_message_received(TopicType & message) {
-    // TODO do something with message...
+  void on_message_received(String & msg)
+  {
+    RCLCPP_INFO(this->get_logger(), "I heard: [%s]", msg.data().c_str());
   }
 
-  dds::pub::DataWriter<TopicType> writer_;
-  dds::sub::DataReader<TopicType> reader_;
+  dds::pub::DataWriter<String> writer_;
+  dds::sub::DataReader<String> reader_;
   rti::ros2::node::MultiThreadedEventNotifier events_;
   std::shared_ptr<rti::ros2::node::DataEvent> on_data_event_;
-  rclcpp::TimerBase::SharedPtr data_timer_;
-  TopicType message_;
+  rclcpp::TimerBase::SharedPtr publish_timer_;
 };
 
 ```
@@ -154,9 +154,67 @@ private:
 
 #### create_datawriter()
 
+*Example usage:*
+
+```cpp
+#include <rti/ros2/node/pub.hpp>
+
+#include "std_msgs/msg/String.hpp"
+
+void publish_chatter(rclcpp::Node & node)
+{
+  using std_msgs::msg::String;
+
+  auto writer = rti::ros2::node::create_datawriter<String>(node, "chatter");
+
+  String msg("Hello Connext!");
+
+  writer.write(msg);
+}
+```
+
 ### DataReader Helpers
 
 #### create_datareader()
+
+*Example usage:*
+
+```cpp
+#include <rti/ros2/node/sub.hpp>
+
+#include "std_msgs/msg/String.hpp"
+
+void read_chatter(rclcpp::Node & node)
+{
+  using std_msgs::msg::String;
+
+  auto reader = rti::ros2::node::create_datareader<String>(node, "chatter");
+
+  using namespace std::chrono_literals;
+  rti::ros2::node::wait_for_data<String>(reader, [node](String & msg){
+    RCLCPP_INFO(node.get_logger(), "I heard: [%s]", msg.data().c_str());
+  }, 10s);
+}
+```
+
+#### wait_for_data()
+
+*Example usage:*
+
+```cpp
+#include <rti/ros2/node/sub.hpp>
+
+#include "std_msgs/msg/String.hpp"
+
+void read_topic(rclcpp::Node & node)
+{
+  using std_msgs::msg::String;
+  using namespace std::chrono_literals;
+  rti::ros2::node::wait_for_data<String>("chatter", [node](String & msg){
+    RCLCPP_INFO(node.get_logger(), "I heard: [%s]", msg.data().c_str());
+  }, 10s);
+}
+```
 
 ### DomainParticipant Helpers
 
@@ -220,13 +278,93 @@ void print_domain(rclcpp::Node & node) {
 
 #### resolve_topic_name()
 
+*Example usage:*
+
+```cpp
+#include <rti/ros2/node/topic.hpp>
+
+void print_dds_topic(rclcpp::Node & node, const char * const topic)
+{
+  RCLCPP_INFO(node.get_logger(), "actual DDS topic: %s => %s",
+    topic, rti::ros2::node::resolve_topic_name(node, topic));
+}
+```
+
 #### create_topic()
+
+*Example usage:*
+
+```cpp
+#include <rti/ros2/node/topic.hpp>
+
+#include "std_msgs/msg/String.hpp"
+
+void create_topic(rclcpp::Node & node)
+{
+  using std_msgs::msg::String;
+  auto topic = rti::ros2::node::create_topic<String>(node, "my_topic");
+
+  RCLCPP_INFO(node.get_logger(), "retaining topic for later use: %s", topic.name().c_str());
+
+  topic.retain();
+}
+```
 
 #### lookup_topic()
 
+*Example usage:*
+
+```cpp
+#include <rti/ros2/node/topic.hpp>
+
+#include "std_msgs/msg/String.hpp"
+
+bool has_topic(rclcpp::Node & node)
+{
+  using std_msgs::msg::String;
+  auto topic = rti::ros2::node::lookup_topic<String>(node, "my_topic");
+  return nullptr != topic;
+}
+```
+
 #### assert_topic()
 
+
+```cpp
+#include <rti/ros2/node/topic.hpp>
+
+#include "std_msgs/msg/String.hpp"
+
+void assert_topic(rclcpp::Node & node)
+{
+  using std_msgs::msg::String;
+  auto topic = rti::ros2::node::assert_topic<String>(node, "my_topic");
+
+  RCLCPP_INFO(node.get_logger(), "retaining topic for later use: %s", topic.name().c_str());
+
+  topic.retain();
+}
+```
+
 #### create_filtered_topic()
+
+
+```cpp
+#include <rti/ros2/node/topic.hpp>
+
+#include "std_msgs/msg/String.hpp"
+
+void create_filtered_topic(rclcpp::Node & node)
+{
+  using std_msgs::msg::String;
+  auto topic = rti::ros2::node::create_filtered_topic<String>(node, "my_topic",
+    "my_custom_filter", "data LIKE 'Hello Connext!'");
+
+  RCLCPP_INFO(node.get_logger(), "retaining topic for later use: %s", topic.name().c_str());
+
+  topic.retain();
+}
+```
 
 #### is_filtered()
 
