@@ -10,6 +10,10 @@
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <depend>rclcpp</depend>
+  <depend>rclcpp_components</depend>
+  <depend>rcpputils</depend>
+  <depend>rcutils</depend>
+
 
   <!-- Used to load the same RTI Connext DDS installation as rmw_connextdds -->
   <depend>rti_connext_dds_cmake_module</depend>
@@ -21,7 +25,6 @@
   <!-- Reuse some of the types from std_msgs for test and example code -->
   <depend>std_msgs</depend>
   <depend>example_interfaces</depend>
-  <depend>rclcpp_components</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

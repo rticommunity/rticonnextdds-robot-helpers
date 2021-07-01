@@ -31,15 +31,14 @@
 #include "rclcpp_components/node_factory.hpp"
 #include "rclcpp_components/node_factory_template.hpp"
 
-// Include RTI Connext DDS "modern C++" API
-//#include <dds/dds.hpp>
-//#include <rti/pub/FlowController.hpp>
+// Include RTI Connext DDS C API
 #include "ndds/ndds_c.h"
 
 #define NODE_MAIN_LOGGER_NAME "@node@"
 
 int main(int argc, char * argv[])
 {
+  // Call Connext DDS C API to make sure the factory singleton is linked in.
   DDS_DomainParticipantFactory * const factory =
     DDS_DomainParticipantFactory_get_instance();
   (void)factory;

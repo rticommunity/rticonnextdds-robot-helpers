@@ -1,22 +1,24 @@
 # ROS 2 utilities for RTI Connext DDS
 
 This repository contains a collection of helper resources to simplify the
-implementation of ROS 2 applications which use the RTI Connext DDS APIs.
+implementation of ROS 2 applications which use the APIs provided by
+[RTI Connext DDS Connectivity Framework](https://www.rti.com/products).
 
 - [Use `connext_node_helpers` in a ROS 2 package](#use-connext_node_helpers-in-a-ros-2-package)
+- [Connext Node API](#connext-node-api)
+- [Additional C++ Helpers](#additional-c-helpers)
 - [CMake Helpers](#cmake-helpers)
   - [connext_generate_typesupport_library](#connext_generate_typesupport_library)
   - [connext_generate_message_typesupport_cpp](#connext_generate_message_typesupport_cpp)
   - [connext_components_register_node](#connext_components_register_node)
   - [connext_add_executable](#connext_add_executable)
-- [C++ Helpers](#c-helpers)
   - [ping-pong tester](#ping-pong-tester)
 - [Other useful resources](#other-useful-resources)
 
 ## Use `connext_node_helpers` in a ROS 2 package
 
 Package `connext_node_helpers` provides CMake and C++ helpers to facilitate the
-implementation of ROS 2 packages based on RTI Connext DDS.
+implementation of ROS 2 packages based on the Connext DDS framework.
 
 Add this package to your `package.xml`'s dependencies and then load it in your
 `CMakeLists.txt`:
@@ -37,39 +39,127 @@ Add this package to your `package.xml`'s dependencies and then load it in your
 
 - `CMakeLists.txt`
 
-  ```cmake
-  cmake_minimum_required(VERSION 3.5)
-  project(my_package)
+  - Load `connext_node_helpers` as a dependency:
 
-  # ...
+    ```cmake
+    find_package(connext_node_helpers REQUIRED)
+    ```
 
-  find_package(connext_node_helpers REQUIRED)
+  - Have build targets link `connext_node_helpers`' library:
 
-  # ...
-  ```
+    ```cmake
+    ament_target_dependencies(my_build_target
+      connext_node_helpers)
+    ```
+  
+  - Export `connext_node_helpers` as a dependency (if building a library):
+
+    ```cmake
+    ament_export_dependencies(connext_node_helpers)
+    ```
+
+## Connext Node API
+
+Package `connext_node_helpers` contains a helper API which ROS 2 applications
+may use to simplify the creation of "native" Connext DDS endpoints.
+
+The API simplifies the integration of these endpoints in a ROS 2 system by
+automatically applying some of the ROS 2 naming conventions.
+
+## Additional C++ Helpers
+
+### ping-pong tester
+
+The header files under `include/rti/ros2/ping` provide a generic implementation
+of a DDS-based ping-pong tester.
+
+Classes `rti::ros2::ping::PingPongPublisher` and `rti::ros2::ping::PingPongSubscriber`
+can be used to instantiate a test for any DDS type.
+
+For an example, see [ping_string.cpp](connext_node_helpers/src/examples/ping_string.cpp).
 
 ## CMake Helpers
 
-Once loaded in a `CMakeList.txt`, the module offers several CMake functions that
-can be used to facilitate some common build task for ROS 2 applications that
-want to use RTI Connext DDS.
+Once loaded in a `CMakeList.txt`, `connext_node_helpers` offers several CMake
+functions that can be used to facilitate some common build task for
+ROS 2/Connext applications.
 
 ### connext_generate_typesupport_library
 
-Generates a shared library containing DDS type support code from a list of ROS 2
-messages and (soon) services, but also regular Connext IDL files.
+*Generate type support code for multiple data types and build it into a single shared library.*
 
-This function takes a list of ROS 2 types and will generate a shared library
-after defining appropriate code generation targets for each type using
-[`connext_generate_message_typesupport_cpp`](#connext_generate_message_typesupport_cpp).
+Function `connext_generate_typesupport_library` simplifies the process of
+defining custom data types for a ROS 2/Connext application using standard
+[OMG IDL](https://www.omg.org/spec/IDL) syntax.
+
+`connext_generate_typesupport_library` takes a list of IDL files, and it
+will generate type support code to use the data types they define with 
+Connext DDS' [Modern C++ API](https://community.rti.com/static/documentation/connext-dds/6.1.0/doc/api/connext_dds/api_cpp2/index.html)
+using [`rtiddsgen`](https://community.rti.com/static/documentation/connext-dds/6.1.0/doc/manuals/connext_dds_professional/code_generator/users_manual/index.htm).
+
+The input IDL files can be specified in multiple ways:
+
+- As ROS message identifiers of the form `<message-namespace>/<message-name>`, e.g. `std_msgs/String`. Use argument `MESSAGES`
+  to specify IDL files with this syntax.
+
+- As ROS service identifiers of the form `<service-namespace>/<service-name>`, e.g. `std_srvs/Trigger`. Use argument `SERVICES`
+  to specify IDL files with this syntax.
+
+- As IDL file paths with an optional, slash-separated, namespace, using syntax
+  `<idl-file-path>[@<idl-namespace>]`. Use argument `IDLS` to specify IDL files
+  with this syntax.
+
+When IDL files are specified as ROS messages and/or services, the function will
+automatically try to load the containing package using `find_package(REQUIRED)`.
+
+Once the package has been loaded, the function will try to load the IDL files
+that are automatically generated by ROS 2 for every custom interface. These
+files must be installed under `<package-install-prefix>/share/<package>/msg` and
+`<package-install-prefix>/share/<package>/srv`.
+
+**WARNING** Not all of the IDL files that are automatically generated by ROS 2
+can be correctly parsed by `rtiddsgen`. If you plan on using the "standard" ROS
+types with native Connext DDS endpoints, consider using package [`connext_msgs`](https://github.com/asorbini/rticonnextdds-ros2-msgs)
+which contains slightly modified (yet still interoperable) versions of these
+types that can be successfully fed to `rtiddsgen`.
+
+The function offers a few more options. Some of these are similar to the ones
+accepted by [`connext_generate_message_typesupport_cpp`](#connext_generate_message_typesupport_cpp)
+which this function uses to actually define a code generation target for each
+input IDL.
+
+- `DEPENDS` (List)
+  - List of targets which will be added as a dependency to each code generation target.
+- `EXPORT_TYPES_LIST` (String)
+  - Name of a variable which will be set with the list of IDL files included
+    in the library.
+- `INCLUDES` (List)
+  - List of directories which will be added to the include path of the generated library.
+- `INSTALL_PREFIX` (String)
+  - Installation prefix where the generated header files will be installed.
+    Default: `include/`.
+- `NO_DEFAULT_INCLUDES` (Boolean)
+  - By default, the function will automatically add the directory of each input
+    IDL to `rtiddsgen`'s include path, to enable `#include` directives that may
+    be contained in the files. When a large number of files is provided, this
+    may cause the resulting command line to be too large to be parsed by
+    `rtiddsgen`, particularly if running in server mode.
+  - If this variable is true, no additional directory will be automatically
+    added to the include path.
+- `SERVER` (Boolean)
+  - Run `rtiddsgen` in server mode. This can be speed up code generation considerably,
+    and it should always be used when processing a large number of input files.
+- `WORKING_DIRECTORY` (String)
+  - Directory from where to invoke `rtiddsgen`. Defaults to `${CMAKE_CURRENT_SOURCE_DIR}`.
+- `ZEROCOPY` (Boolean)
+  - Link the generated library with the Connext DDS libraries required to support
+    Zero Copy Transfer Over Shared Memory.
+
 
 *Example usage:*
 
 ```cmake
 find_package(connext_node_helpers REQUIRED)
-find_package(std_msgs REQUIRED)
-find_package(sensor_msgs REQUIRED)
-find_package(builtin_interfaces REQUIRED)
 
 connext_generate_typesupport_library(my_connext_types_lib
   MESSAGES
@@ -81,25 +171,29 @@ connext_generate_typesupport_library(my_connext_types_lib
   IDLS
     idl/my/custom/ns/MyType.idl@my/custom/ns
     idl/SomeTypesWithoutNamespace.idl
-  ZEROCOPY)
+  ZEROCOPY
+)
 ```
 
 ### connext_generate_message_typesupport_cpp
 
-Generates type support code with `rtiddsgen` from a ROS 2 message definition.
+*Generates type support code with `rtiddsgen` from an input IDL file.*
 
-This is a "lower-level" helper which only defines a code generation target, and
-it will not actually build the generated files.
+`connext_generate_message_typesupport_cpp` is similar to
+`connext_generate_typesupport_library`, but it provides lower-level functionality,
+only to defines a code generation target, and not to actually build the
+generated files.
 
-The list of generated files is returned in an output variable `<pkg>_<type>_FILES`.
-Tt is up to the caller to consume it appropriately as part of an `add_executable()`
-or `add_library()` command.
+The function returns a list of generated files  in an output variable named `<type_pkg>_<type>_FILES`.
+
+It is up to the caller to consume this list appropriately, typically by
+pasing it `add_executable()` or `add_library()`.
 
 The compilation target will also need to be configured with the appropriate
 include directories. By default, all files will be generated in
 `${CMAKE_CURRENT_BINARY_DIR}/rtiddsgen/<pkg>`, and it is sufficient to add
 `${CMAKE_CURRENT_BINARY_DIR}/rtiddsgen` to the include path (since all files
-must always be included as `#include "<pkg>/<type>.idl"`).
+should always be included as `#include "<pkg>/<type>.idl"`).
 
 *Example usage:*
 
@@ -121,7 +215,8 @@ connext_generate_message_typesupport_cpp(String PACKAGE std_msgs)
 # Generated files will be available as `${my_custom_ns_MyType_FILES}`
 # The generated code must be included with `#include "my/custom/ns/MyType.hpp"`.
 connext_generate_message_typesupport_cpp(idl/my/custom/ns/MyType.idl
-  PACKAGE my/custom/ns)
+  PACKAGE my/custom/ns
+)
 
 # Generated files will be available as `${SomeTypesWithoutNamespace_FILES}`
 # The generated code must be included with `#include "SomeTypesWithoutNamespace.hpp"`.
@@ -131,21 +226,26 @@ add_executable(my_app
   main.c
   ${std_msgs_String_FILES}
   ${my_custom_ns_MyType_FILES}
-  ${SomeTypesWithoutNamespace_FILES})
+  ${SomeTypesWithoutNamespace_FILES}
+)
 
 target_include_directories(my_app
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/rtiddsgen)
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/rtiddsgen
+)
 ```
 
 ### connext_components_register_node
 
-Similar to `rclcpp_components_register_node()`, registers a node from a component
+*Generate an executable to "spin up" a ROS 2/Connext node.*
+
+Function `connext_components_register_node` is similar to
+`rclcpp_components_register_node`. The function takes a node from a component
 library, and generates an executable to spin it in a `main()` function.
 
-This function differs from `rclcpp_components_register_node()` in that the
-generate executable will link RTI Connext DDS directly, and it will also be
+This function differs from `rclcpp_components_register_node` in that the
+generate executable will link Connext DDS directly, and it will also be
 properly linked in order to allow sharing of the DomainParticipantFactory
-between the node component and the RMW.
+between the node component and the RMW layer.
 
 *Example usage:*
 
@@ -169,12 +269,13 @@ connext_components_register_node(my_node_components
 
 ### connext_add_executable
 
-Build a ROS 2/DDS C++ application.
+*Build a ROS 2/DDS C++ application.*
 
 This function can be used to simplify the definition of a build target for a
 ROS 2 C++ application that requires direct access to RTI Connext DDS. The
-function will take care of most boiler plate commands required to configure the
-target with the required dependencies and the appropriate linkage.
+function will take care of most "boiler plate" commands required to configure the
+target with the required Connext DDS dependencies and the appropriate linkage
+to share DDS entities with the RMW layer.
 
 *Example usage:*
 
@@ -195,18 +296,6 @@ connext_add_executable(
   INCLUDES
     ${CMAKE_CURRENT_BINARY_DIR}/rtiddsgen)
 ```
-
-## C++ Helpers
-
-### ping-pong tester
-
-The header files under `include/rti/ros2/ping` provide a generic implementation
-of a DDS-based ping-pong tester.
-
-Classes `rti::ros2::ping::PingPongPublisher` and `rti::ros2::ping::PingPongSubscriber`
-can be used to instantiate a test for any DDS type.
-
-For an example, see [ping_string.cpp](connext_node_helpers/src/examples/ping_string.cpp).
 
 ## Other useful resources
 

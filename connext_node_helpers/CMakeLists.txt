@@ -27,6 +27,9 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclcpp_components REQUIRED)
+find_package(rcpputils REQUIRED)
+find_package(rcutils REQUIRED)
 find_package(rti_connext_dds_cmake_module REQUIRED)
 find_package(rmw_connextdds REQUIRED)
 
@@ -60,9 +63,16 @@ add_library(${PROJECT_NAME} SHARED
   include/rti/ros2/ping/publisher.hpp
   include/rti/ros2/ping/subscriber.hpp)
 ament_target_dependencies(${PROJECT_NAME}
-  rclcpp)
+  rclcpp
+  rclcpp_components
+  rcpputils
+  rcutils
+)
 ament_export_dependencies(
   rclcpp
+  rclcpp_components
+  rcpputils
+  rcutils
   rti_connext_dds_cmake_module
   rmw_connextdds)
 ament_export_libraries(${PROJECT_NAME})
@@ -112,8 +122,6 @@ install(
 option(BUILD_EXAMPLES "Build included examples" OFF)
 
 if(BUILD_EXAMPLES)
-  find_package(rclcpp REQUIRED)
-  find_package(rclcpp_components REQUIRED)
   find_package(std_msgs REQUIRED)
 
   connext_generate_message_typesupport_cpp(String PACKAGE std_msgs)
@@ -122,9 +130,6 @@ if(BUILD_EXAMPLES)
     src/examples/ping_string.cpp
     ${std_msgs_String_FILES}
     include/connext_node_helpers/visibility_control.h)
-  ament_target_dependencies(connext_node_helpers_examples
-    rclcpp
-    rclcpp_components)
   target_compile_definitions(connext_node_helpers_examples
     PRIVATE "CONNEXT_NODE_HELPERS_BUILDING_DLL")
   target_include_directories(connext_node_helpers_examples
