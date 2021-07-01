@@ -4,18 +4,40 @@ This repository contains a collection of helper resources to simplify the
 implementation of ROS 2 applications which use the APIs provided by
 [RTI Connext DDS Connectivity Framework](https://www.rti.com/products).
 
-- [Use `connext_node_helpers` in a ROS 2 package](#use-connext_node_helpers-in-a-ros-2-package)
+- [How to use `connext_node_helpers` in a ROS 2 package](#use-connext_node_helpers-in-a-ros-2-package)
 - [Connext Node API](#connext-node-api)
+  - [DataWriter Helpers](#datawriter-helpers)
+    - [create_datawriter()](#create_datawriter)
+  - [DataReader Helpers](#datareader-helpers)
+    - [create_datareader()](#create_datareader)
+  - [DomainParticipant Helpers](#domainparticipant-helpers)
+    - [dds_domain_id()](#dds_domain_id)
+    - [dds_domain_participant()](#dds_domain_participant)
+  - [Topic Helpers](#topic-helpers)
+    - [resolve_topic_name()](#resolve_topic_name)
+    - [create_topic()](#create_topic)
+    - [lookup_topic()](#lookup_topic)
+    - [assert_topic()](#assert_topic)
+    - [create_filtered_topic()](#create_filtered_topic)
+    - [is_filtered()](#is_filtered)
+  - [Request/Reply Helpers](#requestreply-helpers)
+    - [create_requester()](#create_requester)
+    - [create_replier()](#create_replier)
+  - [Event Notification Helpers](#event-notification-helpers)
+    - [EventNotifier::notify_data()](#eventnotifiernotify_data)
+    - [EventNotifier::notify_status_changed()](#eventnotifiernotify_status_changed)
+    - [EventNotifier::notify_user_event()](#eventnotifiernotify_user_event)
+    - [EventNotifier::spin()](#eventnotifierspin)
 - [Additional C++ Helpers](#additional-c-helpers)
+  - [ping-pong tester](#ping-pong-tester)
 - [CMake Helpers](#cmake-helpers)
   - [connext_generate_typesupport_library](#connext_generate_typesupport_library)
   - [connext_generate_message_typesupport_cpp](#connext_generate_message_typesupport_cpp)
   - [connext_components_register_node](#connext_components_register_node)
   - [connext_add_executable](#connext_add_executable)
-  - [ping-pong tester](#ping-pong-tester)
 - [Other useful resources](#other-useful-resources)
 
-## Use `connext_node_helpers` in a ROS 2 package
+## How to use `connext_node_helpers` in a ROS 2 package
 
 Package `connext_node_helpers` provides CMake and C++ helpers to facilitate the
 implementation of ROS 2 packages based on the Connext DDS framework.
@@ -65,6 +87,164 @@ may use to simplify the creation of "native" Connext DDS endpoints.
 
 The API simplifies the integration of these endpoints in a ROS 2 system by
 automatically applying some of the ROS 2 naming conventions.
+
+In order to use the Connext Node API, a ROS 2 application must be running with
+[`rmw_connextdds`](https://github.com/ros2/rmw_connextdds) as its underlying
+RMW layer.
+
+The API can be accessed by including header file `<rti/ros2/node/dds.hpp>`.
+
+Typically, you will use the provided helper functions in your node class,
+similarly to how you normally use the `rclcpp` API:
+
+```cpp
+#include <memory>
+
+#include "rti/ros2/node/dds.hpp"
+
+#include "std_msgs/msg/String.hpp"
+
+class MyNode : public rclcpp::Node
+{
+  using TopicType = std_msgs::msg::String;
+
+public:
+  explicit MyNode(const rclcpp::NodeOptions & options)
+  : Node("my_node", options)
+  {
+    writer_ = rti::ros2::node::create_datawriter<TopicType>(*this, "chatter");
+    
+    reader_ = rti::ros2::node::create_datareader<TopicType>(*this, "chatter");
+    
+    on_data_event_ = events_.notify_data<TopicType>(reader_,
+      [this](
+          dds::sub::DataReader<TopicType> &,
+          dds::sub::cond::ReadCondition & condition)
+      {
+        auto samples = reader_.select().condition(condition).read();
+        for (const auto& sample : samples) {
+          on_message_received(sample.data());
+        }
+      });
+    
+    using namespace std::chrono_literals;
+    data_timer_ = this->create_wall_timer(1s,
+      [this](){
+        // TODO update message before publishing
+        writer_.write(message_);
+      });
+  }
+
+private:
+  void on_message_received(TopicType & message) {
+    // TODO do something with message...
+  }
+
+  dds::pub::DataWriter<TopicType> writer_;
+  dds::sub::DataReader<TopicType> reader_;
+  rti::ros2::node::MultiThreadedEventNotifier events_;
+  std::shared_ptr<rti::ros2::node::DataEvent> on_data_event_;
+  rclcpp::TimerBase::SharedPtr data_timer_;
+  TopicType message_;
+};
+
+```
+
+### DataWriter Helpers
+
+#### create_datawriter()
+
+### DataReader Helpers
+
+#### create_datareader()
+
+### DomainParticipant Helpers
+
+The Connext Node API uses the ROS 2 and Connext DDS APIs to provide easy
+access to the DDS DomainParticipant used by a ROS 2 node.
+
+This DomainParticipant is created by the ROS 2 middleware layer (RMW) whenever
+a ROS 2 context is initialized by a ROS 2 application (e.g. by means of
+`rclcpp::init()`).
+
+The DomainParticipant is shared by all nodes associated with a context.
+
+Applications built using the Connext Node API will rarely need to access the
+underlying DomainParticipant directly, since all public functions take a node
+reference and automatically retrieve it's associated DomainParticipant.
+
+#### dds_domain_id()
+
+*Return the id of the DDS domain joined by a node.*
+
+*Example usage:*
+
+```cpp
+#include <rti/ros2/node/domain.hpp>
+
+void print_domain(rclcpp::Node & node) {
+  std::cout << "Node " << node.get_name() << " is part of DDS domain " <<
+    rti::ros2::node::dds_domain_id(node) << "\n";
+}
+```
+
+#### dds_domain_participant()
+
+*Access the DDS DomainParticipant associated with a node.*
+
+This function will return the first DomainParticipant created within the
+application's DomainParticipantFactory on the DDS domain returned by
+`dds_domain_id()`.
+
+**WARNING** It is possible for (advanced) applications to create multiple ROS 2
+contexts, and thus multiple DDS DomainParticipants.
+
+If multiple DomainParticipants on the same DDS domain are created by a single
+process, Connext Node API will likely fail to return the correct DomainParticipant
+for two nodes on the same domain but on different context.
+
+*Example usage:*
+
+```cpp
+#include <rti/ros2/node/domain.hpp>
+
+void print_domain(rclcpp::Node & node) {
+  auto participant = rti::ros2::node::dds_domain_participant(node);
+
+  std::cout << "Node " << node.get_name() << " is part of DDS domain " <<
+    participant.domain_id() << "\n";
+}
+```
+
+### Topic Helpers
+
+#### resolve_topic_name()
+
+#### create_topic()
+
+#### lookup_topic()
+
+#### assert_topic()
+
+#### create_filtered_topic()
+
+#### is_filtered()
+
+### Request/Reply Helpers
+
+#### create_requester()
+
+#### create_replier()
+
+### Event Notification Helpers
+
+#### EventNotifier::notify_data()
+
+#### EventNotifier::notify_status_changed()
+
+#### EventNotifier::notify_user_event()
+
+#### EventNotifier::spin()
 
 ## Additional C++ Helpers
 
