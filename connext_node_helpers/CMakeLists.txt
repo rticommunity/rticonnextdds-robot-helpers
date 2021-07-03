@@ -46,63 +46,9 @@ endif()
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/connext_node_helpers.cmake)
 
-add_library(${PROJECT_NAME} SHARED
-  src/node/domain.cpp
-  src/node/qos.cpp
-  src/node/topic.cpp
-  include/rti/ros2/node/dds.hpp
-  include/rti/ros2/node/domain.hpp
-  include/rti/ros2/node/topic.hpp
-  include/rti/ros2/node/pub.hpp
-  include/rti/ros2/node/sub.hpp
-  include/rti/ros2/node/request.hpp
-  include/rti/ros2/node/event.hpp
-  include/rti/ros2/data/access.hpp
-  include/rti/ros2/data/memory.hpp
-  include/rti/ros2/ping/tester.hpp
-  include/rti/ros2/ping/publisher.hpp
-  include/rti/ros2/ping/subscriber.hpp)
-ament_target_dependencies(${PROJECT_NAME}
-  rclcpp
-  rclcpp_components
-  rcpputils
-  rcutils
-)
-ament_export_dependencies(
-  rclcpp
-  rclcpp_components
-  rcpputils
-  rcutils
-  rti_connext_dds_cmake_module
-  rmw_connextdds)
-ament_export_libraries(${PROJECT_NAME})
-target_link_libraries(${PROJECT_NAME}
-  # Modern C++ API
-  RTIConnextDDS::cpp2_api
-  # RTI Modern C++ Messaging API
-  RTIConnextDDS::messaging_cpp2_api
-)
-target_include_directories(${PROJECT_NAME}
-  PUBLIC
-    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-    "$<INSTALL_INTERFACE:include>")
-install(
-  TARGETS ${PROJECT_NAME}
-  EXPORT export_${PROJECT_NAME}
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin
-)
-install(
-    DIRECTORY include/
-    DESTINATION include
-)
-ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
-
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()
-  add_subdirectory(test/${PROJECT_NAME})
 endif()
 
 # Install CMake helpers
@@ -121,39 +67,47 @@ install(
 ################################################################################
 option(BUILD_EXAMPLES "Build included examples" OFF)
 
-if(BUILD_EXAMPLES)
-  find_package(std_msgs REQUIRED)
+# if(BUILD_EXAMPLES)
+#   find_package(std_msgs REQUIRED)
 
-  connext_generate_message_typesupport_cpp(String PACKAGE std_msgs)
+#   connext_generate_message_typesupport_cpp(String PACKAGE std_msgs)
 
-  add_library(connext_node_helpers_examples SHARED
-    src/examples/ping_string.cpp
-    ${std_msgs_String_FILES}
-    include/connext_node_helpers/visibility_control.h)
-  target_compile_definitions(connext_node_helpers_examples
-    PRIVATE "CONNEXT_NODE_HELPERS_BUILDING_DLL")
-  target_include_directories(connext_node_helpers_examples
-    PRIVATE
-      ${CMAKE_CURRENT_BINARY_DIR}/rtiddsgen
-      ${CMAKE_CURRENT_SOURCE_DIR}/include)
-  target_link_libraries(connext_node_helpers_examples
-    RTIConnextDDS::cpp2_api
-    ${PROJECT_NAME})
-  set_target_properties(
-    connext_node_helpers_examples PROPERTIES ENABLE_EXPORTS true)
-  install(TARGETS connext_node_helpers_examples
-    ARCHIVE DESTINATION lib
-    LIBRARY DESTINATION lib
-    RUNTIME DESTINATION bin)
+#   add_library(connext_node_helpers_examples SHARED
+#     src/examples/ping_string.cpp
+#     ${std_msgs_String_FILES}
+#     include/connext_node_helpers/visibility_control.h)
+#   target_compile_definitions(connext_node_helpers_examples
+#     PRIVATE "CONNEXT_NODE_HELPERS_BUILDING_DLL")
+#   target_include_directories(connext_node_helpers_examples
+#     PRIVATE
+#       ${CMAKE_CURRENT_BINARY_DIR}/rtiddsgen
+#       ${CMAKE_CURRENT_SOURCE_DIR}/include)
+#   target_link_libraries(connext_node_helpers_examples
+#     RTIConnextDDS::cpp2_api
+#     ${PROJECT_NAME})
+#   set_target_properties(
+#     connext_node_helpers_examples PROPERTIES ENABLE_EXPORTS true)
+#   install(TARGETS connext_node_helpers_examples
+#     ARCHIVE DESTINATION lib
+#     LIBRARY DESTINATION lib
+#     RUNTIME DESTINATION bin)
 
-  connext_components_register_node(connext_node_helpers_examples
-    PLUGIN "StringPingPublisher"
-    EXECUTABLE ping_string_pub)
+#   connext_components_register_node(connext_node_helpers_examples
+#     PLUGIN "StringPingPublisher"
+#     EXECUTABLE ping_string_pub)
 
-  connext_components_register_node(connext_node_helpers_examples
-    PLUGIN "StringPingSubscriber"
-    EXECUTABLE ping_string_sub)
-endif()
+#   connext_components_register_node(connext_node_helpers_examples
+#     PLUGIN "StringPingSubscriber"
+#     EXECUTABLE ping_string_sub)
+# endif()
+
+ament_export_dependencies(
+  rclcpp
+  rclcpp_components
+  rcpputils
+  rcutils
+  rti_connext_dds_cmake_module
+  rmw_connextdds)
 
 ament_package(
   CONFIG_EXTRAS_POST "${PROJECT_NAME}-extras.cmake.in"
