@@ -1,4 +1,5 @@
 // Copyright 2016 Open Source Robotics Foundation, Inc.
+// Copyright 2021 Real-Time Innovations, Inc. (RTI)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,16 +12,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-// Copyright 2021 Real-Time Innovations, Inc.  All rights reserved.
-//
-// RTI grants Licensee a license to use, modify, compile, and create derivative
-// works of the Software.  Licensee has the right to distribute object form
-// only for use with RTI products.  The Software is provided "as is", with no
-// warranty of any type, including any warranty for fitness for any purpose.
-// RTI is under no obligation to maintain or support the Software.  RTI shall
-// not be liable for any incidental or consequential damages arising out of the
-// use or inability to use the software.
 
 #include <memory>
 
@@ -31,12 +22,12 @@
 
 using std::placeholders::_1;
 
-namespace rclcpp_dds_examples {
+namespace rclcpp_dds_examples
+{
 
 class DdsListener : public rclcpp_dds::DdsNode
 {
 public:
-
   DdsListener()
   : DdsNode("dds_listener")
   {
@@ -44,18 +35,20 @@ public:
     auto reader_qos = this->get_default_datareader_qos();
     reader_qos << dds::core::policy::Reliability::Reliable();
     reader_ = this->create_datareader<String>("chatter", reader_qos);
-    this->set_data_callback<String>(reader_, [this](const String & msg)
-    {
-      RCLCPP_INFO(this->get_logger(),
-        "I heard from Connext: [%s]", msg.data().c_str());
-    });
+    this->set_data_callback<String>(
+      reader_, [this](const String & msg)
+      {
+        RCLCPP_INFO(
+          this->get_logger(),
+          "I heard from Connext: [%s]", msg.data().c_str());
+      });
   }
 
 private:
   dds::sub::DataReader<std_msgs::msg::String> reader_{nullptr};
 };
 
-}  // rclcpp_dds_examples
+}  // namespace rclcpp_dds_examples
 
 int main(int argc, char * argv[])
 {

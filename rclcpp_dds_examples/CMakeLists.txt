@@ -153,36 +153,6 @@ connext_add_executable(
     ${PROJECT_NAME}
 )
 
-connext_add_executable(
-  NAME dds_camera_pub
-  SOURCES
-    src/camera/dds/dds_camera_common.hpp
-    src/camera/dds/dds_camera_pub_main.cpp
-    src/camera/dds/dds_camera_pub.hpp
-    src/camera/dds/dds_camera_pub_plain.cpp
-    src/camera/dds/dds_camera_pub_flat.cpp
-    src/camera/dds/dds_camera_pub_flat_zc.cpp
-    src/camera/dds/dds_camera_pub_zc.cpp
-  LIBRARIES
-    ${PROJECT_NAME}_types
-  STANDALONE
-)
-
-connext_add_executable(
-  NAME dds_camera_sub
-  SOURCES
-    src/camera/dds/dds_camera_common.hpp
-    src/camera/dds/dds_camera_sub_main.cpp
-    src/camera/dds/dds_camera_sub.hpp
-    src/camera/dds/dds_camera_sub_plain.cpp
-    src/camera/dds/dds_camera_sub_flat.cpp
-    src/camera/dds/dds_camera_sub_flat_zc.cpp
-    src/camera/dds/dds_camera_sub_zc.cpp
-  LIBRARIES
-    ${PROJECT_NAME}_types
-  STANDALONE
-)
-
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()

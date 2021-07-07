@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef RCLCPP_DDS_EXAMPLES__VISIBILITY_CONTROL_HPP_
-#define RCLCPP_DDS_EXAMPLES__VISIBILITY_CONTROL_HPP_
+#ifndef RCLCPP_DDS_EXAMPLES__VISIBILITY_CONTROL_H_
+#define RCLCPP_DDS_EXAMPLES__VISIBILITY_CONTROL_H_
 
 // This logic was borrowed (then namespaced) from the examples on the gcc wiki:
 //     https://gcc.gnu.org/wiki/Visibility
@@ -45,4 +45,4 @@
   #define RCLCPP_DDS_EXAMPLES_PUBLIC_TYPE
 #endif
 
-#endif  // RCLCPP_DDS_EXAMPLES__VISIBILITY_CONTROL_HPP_
+#endif  // RCLCPP_DDS_EXAMPLES__VISIBILITY_CONTROL_H_
