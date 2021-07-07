@@ -31,13 +31,10 @@ implementation of ROS 2 applications which use the APIs provided by
   - [connext_add_executable](#connext_add_executable)
 - [Other useful resources](#other-useful-resources)
 
-## How to use `connext_node_helpers` in a ROS 2 package
+## How to use this repository in your ROS 2 package
 
-Package `connext_node_helpers` provides CMake and C++ helpers to facilitate the
-implementation of ROS 2 packages based on the Connext DDS framework.
-
-Add this package to your `package.xml`'s dependencies and then load it in your
-`CMakeLists.txt`:
+Add the packages you wish to yous to your package's `package.xml`, and then load
+them in your `CMakeLists.txt`. For example, to use `rclcpp_dds`:
 
 - `package.xml`:
 
@@ -47,7 +44,7 @@ Add this package to your `package.xml`'s dependencies and then load it in your
     
     <!-- ... -->
 
-    <depend>connext_node_helpers</depend>
+    <depend>rclcpp_dds</depend>
   
     <!-- ... -->
   </package>
@@ -55,23 +52,23 @@ Add this package to your `package.xml`'s dependencies and then load it in your
 
 - `CMakeLists.txt`
 
-  - Load `connext_node_helpers` as a dependency:
+  - Load `rclcpp_dds` as a dependency:
 
     ```cmake
-    find_package(connext_node_helpers REQUIRED)
+    find_package(rclcpp_dds REQUIRED)
     ```
 
-  - Have build targets link `connext_node_helpers`' library:
+  - Have build targets link `rclcpp_dds`' library:
 
     ```cmake
     ament_target_dependencies(my_build_target
-      connext_node_helpers)
+      rclcpp_dds)
     ```
   
-  - Export `connext_node_helpers` as a dependency (if building a library):
+  - Export `rclcpp_dds` as a dependency:
 
     ```cmake
-    ament_export_dependencies(connext_node_helpers)
+    ament_export_dependencies(rclcpp_dds)
     ```
 
 ## DDS Node API
