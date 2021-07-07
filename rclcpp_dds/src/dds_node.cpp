@@ -18,16 +18,16 @@
 
 namespace rclcpp_dds
 {
-DdsNode::DdsNode(
+DDSNode::DDSNode(
   const std::string & node_name,
-  const DdsNodeOptions & options)
-: DdsNodeMixin(node_name, options)
+  const DDSNodeOptions & options)
+: DDSNodeMixin(node_name, options)
 {}
 
-DdsNode::DdsNode(
+DDSNode::DDSNode(
   const std::string & node_name,
   const std::string & namespace_,
-  const DdsNodeOptions & options)
-: DdsNodeMixin(node_name, namespace_, options)
+  const DDSNodeOptions & options)
+: DDSNodeMixin(node_name, namespace_, options)
 {}
 }  // namespace rclcpp_dds

@@ -25,7 +25,7 @@ class PingPongPublisher : public PingPongTester<T>
 public:
   PingPongPublisher(
     const char * const name,
-    const rclcpp_dds::DdsNodeOptions & options)
+    const rclcpp_dds::DDSNodeOptions & options)
   : PingPongTester<T>(name, options, true /* ping */)
   {}
 

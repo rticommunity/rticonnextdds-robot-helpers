@@ -80,46 +80,48 @@ Add this package to your `package.xml`'s dependencies and then load it in your
     ament_export_dependencies(connext_node_helpers)
     ```
 
-## Connext Node API
+## DDS Node API
 
-Package `connext_node_helpers` contains a helper API which ROS 2 applications
-may use to simplify the creation of "native" Connext DDS endpoints.
+Package `ros2dds` contains a helper API which ROS 2 applications
+may use to simplify the creation of "native" DDS endpoints.
 
 The API simplifies the integration of these endpoints in a ROS 2 system by
 automatically applying some of the ROS 2 naming conventions.
 
-In order to use the Connext Node API, a ROS 2 application must be running with
+These APIs can also be accessed by extending `rclcpp_dds::DDSNode`, which is
+a subclass of `rclcpp::Node` provided by package `rclcpp_dds`.
+
+In order to use the DDS Node API, a ROS 2 application must be running with
 [`rmw_connextdds`](https://github.com/ros2/rmw_connextdds) as its underlying
 RMW layer.
 
-The API can be accessed by including header file `ros2dds/ros2dds.hpp`.
-
-Typically, you will use the provided helper functions in your node class,
-similarly to how you normally use the `rclcpp` API:
+Typically, you will extend `rclcpp_dds::DDSNode`, and use the provided methods
+similarly to how you normally use the `rclcpp::Node` API:
 
 ```cpp
 #include <memory>
 
-#include "ros2dds/ros2dds.hpp"
+#include "rclcpp_dds/rclcpp_dds.hpp"
 
 #include "std_msgs/msg/String.hpp"
 
-class MyNode : public rclcpp::Node
+class MyNode : public rclcpp_dds::DDSNode
 {
 public:
   using std_msgs::msg::String;
 
   explicit MyNode(const rclcpp::NodeOptions & options)
-  : Node("my_node", options)
+  : DDSNode("my_node", options)
   {
-    writer_ = ros2dds::create_datawriter<String>(*this, "chatter");
+    writer_ = this->create_datawriter<String>("chatter");
     
-    reader_ = ros2dds::create_datareader<String>(*this, "chatter");
+    reader_ = this->create_datareader<String>("chatter");
     
-    read_condition_ = notifier.read_data_callback<String>(reader_,
+    this->set_data_callback<String>(
+      reader_,
       [this](const String & msg)
       {
-        on_message_received(msg);
+        RCLCPP_INFO(this->get_logger(), "I heard: [%s]", msg.data().c_str());
       });
 
     using namespace std::chrono_literals;
@@ -131,15 +133,8 @@ public:
   }
 
 private:
-  void on_message_received(String & msg)
-  {
-    RCLCPP_INFO(this->get_logger(), "I heard: [%s]", msg.data().c_str());
-  }
-
   dds::pub::DataWriter<String> writer_;
   dds::sub::DataReader<String> reader_;
-  ros2dds::AsyncConditionNotifier notifier_;
-  dds::sub::ReadCondtion read_condition_;
   rclcpp::TimerBase::SharedPtr publish_timer_;
 };
 
@@ -147,69 +142,63 @@ private:
 
 ### DataWriter Helpers
 
-#### create_datawriter()
+#### DDSNode::create_datawriter()
 
 *Example usage:*
 
 ```cpp
-#include "ros2dds/ros2dds.hpp"
-
+#include "rclcpp_dds/rclcpp_dds.hpp"
 #include "std_msgs/msg/String.hpp"
 
-void publish_chatter(rclcpp::Node & node)
+class MyNode : public rclcpp_dds::DDSNode
 {
-  using std_msgs::msg::String;
+public:
+  explicit MyNode(const rclcpp::NodeOptions & options)
+  : DDSNode("my_node", options)
+  {
+    using std_msgs::msg::String;
 
-  auto writer = ros2dds::create_datawriter<String>(node, "chatter");
+    // Create a DataWriter for ROS topic "chatter" (i.e. DDS topic "rt/chatter").
+    auto writer = this->create_datawriter<String>("chatter");
 
-  String msg("Hello Connext!");
+    // Create a DataWriter for ROS topic "chatter" with custom QoS.
+    dds::pub::qos::DataWriterQos writer_qos;
+    auto writer_custom_qos = this->create_datawriter<String>("chatter", writer_qos);
 
-  writer.write(msg);
-}
+    // Create a DataWriter for a custom DDS topic "my_custom_topic".
+    dds::topic::Topic topic(this->domain_participant(), "my_custom_topic");
+    auto writer_custom_topic = this->create_datawriter<String>(topic);
+  }
+};
 ```
 
 ### DataReader Helpers
 
-#### create_datareader()
+#### DDSNode::create_datareader()
 
 *Example usage:*
 
 ```cpp
-#include "ros2dds/ros2dds.hpp"
-
-#include "std_msgs/msg/String.hpp"
-
-void read_data(rclcpp::Node & node)
+class MyNode : public rclcpp_dds::DDSNode
 {
-  using std_msgs::msg::String;
+public:
+  explicit MyNode(const rclcpp::NodeOptions & options)
+  : DDSNode("my_node", options)
+  {
+    using std_msgs::msg::String;
+    
+    // Create a DataReader for ROS topic "chatter" (i.e. DDS topic "rt/chatter").
+    auto reader = this->create_datareader<String>("chatter");
 
-  auto reader = ros2dds::create_datareader<String>(node, "chatter");
+    // Create a DataReader for ROS topic "chatter" with custom QoS.
+    dds::sub::qos::DataReaderQos reader_qos;
+    auto reader_custom_qos = this->create_datareader<String>("chatter", reader_qos);
 
-  using namespace std::chrono_literals;
-  ros2dds::read<String>(reader, [node](String & msg){
-    RCLCPP_INFO(node.get_logger(), "I heard: [%s]", msg.data().c_str());
-  }, 10s);
-}
-```
-
-#### read()
-
-*Example usage:*
-
-```cpp
-#include "ros2dds/ros2dds.hpp"
-
-#include "std_msgs/msg/String.hpp"
-
-using std_msgs::msg::String;
-
-void read_data(rclcpp::Node & node, dds::sub::DataReader<String> & reader)
-{
-  using namespace std::chrono_literals;
-  ros2dds::read<String>(reader, [node](String & msg){
-    RCLCPP_INFO(node.get_logger(), "I heard: [%s]", msg.data().c_str());
-  }, 10s);
-}
+    // Create a DataReader for a custom DDS topic "my_custom_topic".
+    dds::topic::Topic topic(this->domain_participant(), "my_custom_topic");
+    auto writer_custom_topic = this->create_datawriter<String>(topic);
+  }
+};
 ```
 
 ### DomainParticipant Helpers
@@ -227,28 +216,28 @@ Applications built using the Connext Node API will rarely need to access the
 underlying DomainParticipant directly, since all public functions take a node
 reference and automatically retrieve it's associated DomainParticipant.
 
-#### domain_id()
+#### DDSNode::domain_id()
 
 *Return the id of the DDS domain joined by a node.*
 
 *Example usage:*
 
 ```cpp
-#include "ros2dds/ros2dds.hpp"
+#include "rclcpp_dds/rclcpp_dds.hpp"
 
-void print_domain(rclcpp::Node & node) {
+void print_domain(rclcpp_dds::DDSNode & node) {
   std::cout << "Node " << node.get_name() << " is part of DDS domain " <<
-    ros2dds::domain_id(node) << "\n";
+    node.domain_id() << "\n";
 }
 ```
 
-#### domain_participant()
+#### DDSNode::domain_participant()
 
 *Access the DDS DomainParticipant associated with a node.*
 
 This function will return the first DomainParticipant created within the
 application's DomainParticipantFactory on the DDS domain returned by
-`dds_domain_id()`.
+`DDSNode::domain_id()`.
 
 **WARNING** It is possible for (advanced) applications to create multiple ROS 2
 contexts, and thus multiple DDS DomainParticipants.
@@ -260,137 +249,79 @@ for two nodes on the same domain but on different context.
 *Example usage:*
 
 ```cpp
-#include "ros2dds/ros2dds.hpp"
+#include "rclcpp_dds/rclcpp_dds.hpp"
 
-void print_domain(rclcpp::Node & node) {
-  auto participant = ros2dds::domain_participant(node);
-
+void print_domain(rclcpp_dds::DDSNode & node) {
   std::cout << "Node " << node.get_name() << " is part of DDS domain " <<
-    participant.domain_id() << "\n";
+    node.domain_participant().domain_id() << "\n";
 }
 ```
 
 ### Topic Helpers
 
-#### resolve_topic_name()
+#### DDSNode::create_topic()
 
 *Example usage:*
 
 ```cpp
-#include "ros2dds/ros2dds.hpp" 
-
-void print_dds_topic(rclcpp::Node & node, const char * const topic)
-{
-  RCLCPP_INFO(node.get_logger(), "actual DDS topic: %s => %s",
-    topic, ros2dds::resolve_topic_name(node, topic));
-}
-```
-
-#### create_topic()
-
-*Example usage:*
-
-```cpp
-#include "ros2dds/ros2dds.hpp"
-
+#include "rclcpp_dds/rclcpp_dds.hpp"
 #include "std_msgs/msg/String.hpp"
 
-void create_topic(rclcpp::Node & node)
+void create_topic(rclcpp_dds::DDSNode & node)
 {
-  using std_msgs::msg::String;
-  auto topic = ros2dds::create_topic<String>(node, "my_topic");
-
-  RCLCPP_INFO(node.get_logger(), "retaining topic for later use: %s", topic.name().c_str());
-
+  // Create a topic and retain it for later use
+  auto topic = node.create_topic<std_msgs::msg::String>("my_topic");
   topic.retain();
 }
 ```
 
-#### lookup_topic()
+#### DDSNode::lookup_topic()
 
 *Example usage:*
 
 ```cpp
 #include "ros2dds/ros2dds.hpp"
-
 #include "std_msgs/msg/String.hpp"
 
-bool has_topic(rclcpp::Node & node)
+bool has_topic(rclcpp_dds::DDSNode & node)
 {
-  using std_msgs::msg::String;
-  auto topic = ros2dds::lookup_topic<String>(node, "my_topic");
+  // The function will return nullptr (or dds::core::nullptr)
+  // if the topic doesn't exist.
+  auto topic = node.lookup_topic<std_msgs::msg::String>("my_topic");
   return nullptr != topic;
 }
 ```
 
-#### assert_topic()
+#### DDSNode::create_content_filtered_topic()
 
+*Example usage:*
 
 ```cpp
-#include "ros2dds/ros2dds.hpp"
-
+#include "rclcpp_dds/rclcpp_dds.hpp"
 #include "std_msgs/msg/String.hpp"
 
-void assert_topic(rclcpp::Node & node)
+void create_content_filtered_topic(rclcpp_dds::DDSNode & node)
 {
   using std_msgs::msg::String;
-  auto topic = ros2dds::assert_topic<String>(node, "my_topic");
-
-  RCLCPP_INFO(node.get_logger(), "retaining topic for later use: %s", topic.name().c_str());
-
+  auto topic = node.create_content_filtered_topic<std_msgs::msg::String>(
+    "my_topic", "my_custom_filter", "data LIKE 'Hello Connext!'");
   topic.retain();
 }
 ```
 
-#### create_content_filtered_topic()
+### Callback Notification
 
+#### DDSNode::set_data_callback()
 
-```cpp
-#include "ros2dds/ros2dds.hpp"
+#### DDSNode::cancel_data_callback()
 
-#include "std_msgs/msg/String.hpp"
+#### DDSNode::set_status_callback()
 
-void create_content_filtered_topic(rclcpp::Node & node)
-{
-  using std_msgs::msg::String;
-  auto topic = ros2dds::create_content_filtered_topic<String>(node, "my_topic",
-    "my_custom_filter", "data LIKE 'Hello Connext!'");
+#### DDSNode::cancel_status_callback()
 
-  RCLCPP_INFO(node.get_logger(), "retaining topic for later use: %s", topic.name().c_str());
+#### DDSNode::add_user_callback()
 
-  topic.retain();
-}
-```
-
-#### is_filtered()
-
-### Request/Reply Helpers
-
-#### create_requester()
-
-#### create_replier()
-
-### Event Notification Helpers
-
-#### EventNotifier::notify_data()
-
-#### EventNotifier::notify_status_changed()
-
-#### EventNotifier::notify_user_event()
-
-#### EventNotifier::spin()
-
-## Additional C++ Helpers
-
-### ping-pong tester
-
-The header files under `include/rti/ros2/ping` provide a generic implementation
-of a DDS-based ping-pong tester.
-
-Classes `rti::ros2::ping::PingPongPublisher` and `rti::ros2::ping::PingPongSubscriber`
-can be used to instantiate a test for any DDS type.
-
-For an example, see [ping_string.cpp](connext_node_helpers/src/examples/ping_string.cpp).
+#### DDSNode::cancel_user_callback()
 
 ## CMake Helpers
 
@@ -613,8 +544,6 @@ connext_add_executable(
 
 ## Other useful resources
 
-- [`rticonnextdds-ros2-demos`](https://github.com/asorbini/rticonnextdds-ros2-demos)
-  - Collection of example hybrid ROS 2/Connext applications.
 - [`rticonnextdds-ros2-msgs`](https://github.com/asorbini/rticonnextdds-ros2-msgs)
   - Helper library containing C++11 message type supports generated with
    `rtiddsgen` for almost every type include in ROS 2.

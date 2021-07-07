@@ -23,7 +23,7 @@
 
 namespace rclcpp_dds
 {
-class DdsNode : public DdsNodeMixin<rclcpp::Node>
+class DDSNode : public DDSNodeMixin<rclcpp::Node>
 {
 public:
   // NOTE: cppcheck on Foxy fails to correctly resolve the following macro's definition.
@@ -32,21 +32,21 @@ public:
 #ifndef RCLCPP_SMART_PTR_DEFINITIONS
 #error "RCLCPP_SMART_PTR_DEFINITIONS undefined"
 #endif  // RCLCPP_SMART_PTR_DEFINITIONS
-  RCLCPP_SMART_PTR_DEFINITIONS(DdsNode)
+  RCLCPP_SMART_PTR_DEFINITIONS(DDSNode)
 
   RCLCPP_DDS_PUBLIC
-  explicit DdsNode(
+  explicit DDSNode(
     const std::string & node_name,
-    const DdsNodeOptions & options = DdsNodeOptions());
+    const DDSNodeOptions & options = DDSNodeOptions());
 
   RCLCPP_DDS_PUBLIC
-  explicit DdsNode(
+  explicit DDSNode(
     const std::string & node_name,
     const std::string & namespace_,
-    const DdsNodeOptions & options = DdsNodeOptions());
+    const DDSNodeOptions & options = DDSNodeOptions());
 
 private:
-  RCLCPP_DISABLE_COPY(DdsNode)
+  RCLCPP_DISABLE_COPY(DDSNode)
 };
 
 }  // namespace rclcpp_dds

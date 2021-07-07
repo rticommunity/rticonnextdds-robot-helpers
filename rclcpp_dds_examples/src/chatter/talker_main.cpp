@@ -25,11 +25,11 @@
 namespace rclcpp_dds_examples
 {
 
-class DdsTalker : public rclcpp_dds::DdsNode
+class DdsTalker : public rclcpp_dds::DDSNode
 {
 public:
   DdsTalker()
-  : DdsNode("dds_talker"),
+  : DDSNode("dds_talker"),
     count_(0)
   {
     // Create a function to send messages periodically.

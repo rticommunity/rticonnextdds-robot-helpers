@@ -31,14 +31,14 @@ namespace rclcpp_dds
 //   typename NodeT,
 //   typename ExecutorT>
 template<typename NodeT>
-class DdsNodeMixin : public NodeT
+class DDSNodeMixin : public NodeT
 {
 public:
   using TopicKind = ros2dds::TopicKind;
 
-  explicit DdsNodeMixin(
+  explicit DDSNodeMixin(
     const std::string & node_name,
-    const DdsNodeOptions & options = DdsNodeOptions())
+    const DDSNodeOptions & options = DDSNodeOptions())
   : NodeT(node_name, options),
     node_options_(options)
   {
@@ -49,10 +49,10 @@ public:
     }
   }
 
-  explicit DdsNodeMixin(
+  explicit DDSNodeMixin(
     const std::string & node_name,
     const std::string & namespace_,
-    const DdsNodeOptions & options = DdsNodeOptions())
+    const DDSNodeOptions & options = DDSNodeOptions())
   : NodeT(node_name, namespace_, options),
     node_options_(options)
   {
@@ -63,7 +63,7 @@ public:
     }
   }
 
-  virtual ~DdsNodeMixin() = default;
+  virtual ~DDSNodeMixin() = default;
 
   /**
    * @brief Access the DDS domain joined by this node.
@@ -624,7 +624,7 @@ protected:
   }
 
 private:
-  const DdsNodeOptions node_options_;
+  const DDSNodeOptions node_options_;
 
   dds::domain::DomainParticipant domain_participant_{nullptr};
   // std::vector<dds::sub::AnyDataReader> datareaders_;

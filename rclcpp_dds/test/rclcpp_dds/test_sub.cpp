@@ -37,7 +37,7 @@ protected:
 
   void SetUp()
   {
-    node = std::make_shared<rclcpp_dds::DdsNode>("my_node", "/ns");
+    node = std::make_shared<rclcpp_dds::DDSNode>("my_node", "/ns");
   }
 
   void TearDown()
@@ -45,7 +45,7 @@ protected:
     node.reset();
   }
 
-  rclcpp_dds::DdsNode::SharedPtr node;
+  rclcpp_dds::DDSNode::SharedPtr node;
 };
 
 TEST_F(TestSub, create_datareader) {
@@ -101,9 +101,9 @@ protected:
 
   void SetUp()
   {
-    rclcpp_dds::DdsNodeOptions opts;
+    rclcpp_dds::DDSNodeOptions opts;
     opts.use_ros_naming_conventions(false);
-    node = std::make_shared<rclcpp_dds::DdsNode>("my_node", "/ns", opts);
+    node = std::make_shared<rclcpp_dds::DDSNode>("my_node", "/ns", opts);
   }
 
   void TearDown()
@@ -111,7 +111,7 @@ protected:
     node.reset();
   }
 
-  rclcpp_dds::DdsNode::SharedPtr node;
+  rclcpp_dds::DDSNode::SharedPtr node;
 };
 
 

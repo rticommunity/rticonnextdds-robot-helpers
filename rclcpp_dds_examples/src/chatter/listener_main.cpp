@@ -25,11 +25,11 @@ using std::placeholders::_1;
 namespace rclcpp_dds_examples
 {
 
-class DdsListener : public rclcpp_dds::DdsNode
+class DdsListener : public rclcpp_dds::DDSNode
 {
 public:
   DdsListener()
-  : DdsNode("dds_listener")
+  : DDSNode("dds_listener")
   {
     using std_msgs::msg::String;
     auto reader_qos = this->get_default_datareader_qos();

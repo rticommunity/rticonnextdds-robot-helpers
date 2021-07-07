@@ -25,7 +25,7 @@ class PingPongSubscriber : public PingPongTester<T>
 public:
   PingPongSubscriber(
     const char * const name,
-    const rclcpp_dds::DdsNodeOptions & options)
+    const rclcpp_dds::DDSNodeOptions & options)
   : PingPongTester<T>(name, options, false /* pong */)
   {}
 

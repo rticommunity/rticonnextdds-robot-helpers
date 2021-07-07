@@ -33,12 +33,12 @@ namespace rclcpp_dds_examples
 // Create a Talker class that subclasses the generic rclcpp::Node base class.
 // The main function below will instantiate the class as a ROS node.
 // Use Connext's Modern C++ API to create a DataWriter to publish messages.
-class DdsTalker : public rclcpp_dds::DdsNode
+class DdsTalker : public rclcpp_dds::DDSNode
 {
 public:
   RCLCPP_DDS_EXAMPLES_PUBLIC
   explicit DdsTalker(const rclcpp::NodeOptions & options)
-  : DdsNode("talker", options)
+  : DDSNode("talker", options)
   {
     // Create a function for when messages are to be sent.
     setvbuf(stdout, NULL, _IONBF, BUFSIZ);

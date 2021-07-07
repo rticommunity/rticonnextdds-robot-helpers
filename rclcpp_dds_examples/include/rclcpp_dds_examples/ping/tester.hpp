@@ -121,14 +121,14 @@ struct PingPongTesterOptions
 };
 
 template<typename T>
-class PingPongTester : public rclcpp_dds::DdsNode
+class PingPongTester : public rclcpp_dds::DDSNode
 {
 protected:
   PingPongTester(
     const char * const name,
-    const rclcpp_dds::DdsNodeOptions & options,
+    const rclcpp_dds::DDSNodeOptions & options,
     const bool ping)
-  : DdsNode(name, options),
+  : DDSNode(name, options),
     ping_(ping)
   {
     // We use ROS 2 parameters to allow customization of test parameters, e.g.

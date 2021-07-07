@@ -23,36 +23,36 @@
 
 namespace rclcpp_dds
 {
-class DdsNodeOptions : public rclcpp::NodeOptions
+class DDSNodeOptions : public rclcpp::NodeOptions
 {
 public:
   RCLCPP_DDS_PUBLIC
-  explicit DdsNodeOptions(rcl_allocator_t allocator = rcl_get_default_allocator())
+  explicit DDSNodeOptions(rcl_allocator_t allocator = rcl_get_default_allocator())
   : NodeOptions(allocator)
   {}
 
   /// Destructor.
   RCLCPP_DDS_PUBLIC
   virtual
-  ~DdsNodeOptions() = default;
+  ~DDSNodeOptions() = default;
 
   /// Copy constructor.
   RCLCPP_DDS_PUBLIC
-  DdsNodeOptions(const DdsNodeOptions & other)
+  DDSNodeOptions(const DDSNodeOptions & other)
   : NodeOptions(other),
     use_ros_naming_conventions_(other.use_ros_naming_conventions_),
     dds_executor_(other.dds_executor_)
   {}
 
   RCLCPP_DDS_PUBLIC
-  DdsNodeOptions(const NodeOptions & other)
+  DDSNodeOptions(const NodeOptions & other)
   : NodeOptions(other)
   {}
 
   /// Assignment operator.
   RCLCPP_DDS_PUBLIC
-  DdsNodeOptions &
-  operator=(const DdsNodeOptions & other)
+  DDSNodeOptions &
+  operator=(const DDSNodeOptions & other)
   {
     rclcpp::NodeOptions::operator=(other);
     if (this != &other) {
@@ -63,7 +63,7 @@ public:
   }
 
   RCLCPP_DDS_PUBLIC
-  DdsNodeOptions &
+  DDSNodeOptions &
   operator=(const NodeOptions & other)
   {
     rclcpp::NodeOptions::operator=(other);
@@ -78,7 +78,7 @@ public:
   }
 
   RCLCPP_DDS_PUBLIC
-  DdsNodeOptions &
+  DDSNodeOptions &
   use_ros_naming_conventions(const bool the_use_ros_naming_conventions)
   {
     use_ros_naming_conventions_ = the_use_ros_naming_conventions;
@@ -100,7 +100,7 @@ public:
   }
 
   RCLCPP_DDS_PUBLIC
-  DdsNodeOptions &
+  DDSNodeOptions &
   dds_executor(const std::shared_ptr<ros2dds::WaitSetExecutor> & the_dds_executor)
   {
     dds_executor_ = the_dds_executor;

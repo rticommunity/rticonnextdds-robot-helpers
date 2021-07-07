@@ -25,12 +25,12 @@ namespace rclcpp_dds_examples
 {
 // Create a Listener class that subclasses the generic rclcpp::Node base class.
 // The main function below will instantiate the class as a ROS node.
-class DdsListener : public rclcpp_dds::DdsNode
+class DdsListener : public rclcpp_dds::DDSNode
 {
 public:
   RCLCPP_DDS_EXAMPLES_PUBLIC
   explicit DdsListener(const rclcpp::NodeOptions & options)
-  : DdsNode("dds_listener", options)
+  : DDSNode("dds_listener", options)
   {
     setvbuf(stdout, NULL, _IONBF, BUFSIZ);
     using std_msgs::msg::String;

@@ -55,7 +55,7 @@ protected:
 
   void SetUp()
   {
-    node = std::make_shared<rclcpp_dds::DdsNode>("my_node", "/ns");
+    node = std::make_shared<rclcpp_dds::DDSNode>("my_node", "/ns");
   }
 
   void TearDown()
@@ -87,7 +87,7 @@ protected:
     return node->create_datareader<T>("foo", reader_qos);
   }
 
-  rclcpp_dds::DdsNode::SharedPtr node;
+  rclcpp_dds::DDSNode::SharedPtr node;
 };
 
 TEST_F(TestCallback, data_callback) {
