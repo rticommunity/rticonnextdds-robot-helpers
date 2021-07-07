@@ -93,10 +93,7 @@ Typically, you will extend `rclcpp_dds::DDSNode`, and use the provided methods
 similarly to how you normally use the `rclcpp::Node` API:
 
 ```cpp
-#include <memory>
-
 #include "rclcpp_dds/rclcpp_dds.hpp"
-
 #include "std_msgs/msg/String.hpp"
 
 class MyNode : public rclcpp_dds::DDSNode
