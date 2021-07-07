@@ -104,8 +104,6 @@ public:
   explicit MyNode(const rclcpp::NodeOptions & options)
   : DDSNode("my_node", options)
   {
-    writer_ = this->create_datawriter<String>("chatter");
-    
     reader_ = this->create_datareader<String>("chatter");
     
     this->set_data_callback<String>(
@@ -114,6 +112,8 @@ public:
       {
         RCLCPP_INFO(this->get_logger(), "I heard: [%s]", msg.data().c_str());
       });
+
+    writer_ = this->create_datawriter<String>("chatter");
 
     using namespace std::chrono_literals;
     publish_timer_ = this->create_wall_timer(1s,
