@@ -11,9 +11,6 @@
 
   <depend>rclcpp</depend>
   <depend>rclcpp_components</depend>
-  <depend>rcpputils</depend>
-  <depend>rcutils</depend>
-
 
   <!-- Used to load the same RTI Connext DDS installation as rmw_connextdds -->
   <depend>rti_connext_dds_cmake_module</depend>

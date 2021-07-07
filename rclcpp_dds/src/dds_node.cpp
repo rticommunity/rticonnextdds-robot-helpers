@@ -1,4 +1,4 @@
-// (c) 2021 Copyright, Real-Time Innovations, Inc. (RTI)
+// Copyright 2021 Real-Time Innovations, Inc. (RTI)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+#include <string>
+
 #include "rclcpp_dds/dds_node.hpp"
 
 namespace rclcpp_dds
@@ -27,4 +30,4 @@ DdsNode::DdsNode(
   const DdsNodeOptions & options)
 : DdsNodeMixin(node_name, namespace_, options)
 {}
-}  // namespace ros2dds
+}  // namespace rclcpp_dds

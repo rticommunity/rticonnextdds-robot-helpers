@@ -18,7 +18,7 @@ implementation of ROS 2 applications which use the APIs provided by
     - [create_topic()](#create_topic)
     - [lookup_topic()](#lookup_topic)
     - [assert_topic()](#assert_topic)
-    - [create_filtered_topic()](#create_filtered_topic)
+    - [create_content_filtered_topic()](#create_content_filtered_topic)
     - [is_filtered()](#is_filtered)
   - [Request/Reply Helpers](#requestreply-helpers)
     - [create_requester()](#create_requester)
@@ -92,7 +92,7 @@ In order to use the Connext Node API, a ROS 2 application must be running with
 [`rmw_connextdds`](https://github.com/ros2/rmw_connextdds) as its underlying
 RMW layer.
 
-The API can be accessed by including header file `<rti/ros2/node/dds.hpp>`.
+The API can be accessed by including header file `ros2dds/ros2dds.hpp`.
 
 Typically, you will use the provided helper functions in your node class,
 similarly to how you normally use the `rclcpp` API:
@@ -100,7 +100,7 @@ similarly to how you normally use the `rclcpp` API:
 ```cpp
 #include <memory>
 
-#include "rti/ros2/node/dds.hpp"
+#include "ros2dds/ros2dds.hpp"
 
 #include "std_msgs/msg/String.hpp"
 
@@ -112,21 +112,16 @@ public:
   explicit MyNode(const rclcpp::NodeOptions & options)
   : Node("my_node", options)
   {
-    writer_ = rti::ros2::node::create_datawriter<String>(*this, "chatter");
+    writer_ = ros2dds::create_datawriter<String>(*this, "chatter");
     
-    reader_ = rti::ros2::node::create_datareader<String>(*this, "chatter");
+    reader_ = ros2dds::create_datareader<String>(*this, "chatter");
     
-    on_data_event_ = events_.notify_data<String>(reader_,
-      [this](
-          dds::sub::DataReader<String> &,
-          dds::sub::cond::ReadCondition & condition)
+    read_condition_ = notifier.read_data_callback<String>(reader_,
+      [this](const String & msg)
       {
-        auto samples = reader_.select().condition(condition).read();
-        for (const auto& sample : samples) {
-          on_message_received(sample.data());
-        }
+        on_message_received(msg);
       });
-    
+
     using namespace std::chrono_literals;
     publish_timer_ = this->create_wall_timer(1s,
       [this](){
@@ -143,8 +138,8 @@ private:
 
   dds::pub::DataWriter<String> writer_;
   dds::sub::DataReader<String> reader_;
-  rti::ros2::node::MultiThreadedEventNotifier events_;
-  std::shared_ptr<rti::ros2::node::DataEvent> on_data_event_;
+  ros2dds::AsyncConditionNotifier notifier_;
+  dds::sub::ReadCondtion read_condition_;
   rclcpp::TimerBase::SharedPtr publish_timer_;
 };
 
@@ -157,7 +152,7 @@ private:
 *Example usage:*
 
 ```cpp
-#include <rti/ros2/node/pub.hpp>
+#include "ros2dds/ros2dds.hpp"
 
 #include "std_msgs/msg/String.hpp"
 
@@ -165,7 +160,7 @@ void publish_chatter(rclcpp::Node & node)
 {
   using std_msgs::msg::String;
 
-  auto writer = rti::ros2::node::create_datawriter<String>(node, "chatter");
+  auto writer = ros2dds::create_datawriter<String>(node, "chatter");
 
   String msg("Hello Connext!");
 
@@ -180,37 +175,38 @@ void publish_chatter(rclcpp::Node & node)
 *Example usage:*
 
 ```cpp
-#include <rti/ros2/node/sub.hpp>
+#include "ros2dds/ros2dds.hpp"
 
 #include "std_msgs/msg/String.hpp"
 
-void read_chatter(rclcpp::Node & node)
+void read_data(rclcpp::Node & node)
 {
   using std_msgs::msg::String;
 
-  auto reader = rti::ros2::node::create_datareader<String>(node, "chatter");
+  auto reader = ros2dds::create_datareader<String>(node, "chatter");
 
   using namespace std::chrono_literals;
-  rti::ros2::node::wait_for_data<String>(reader, [node](String & msg){
+  ros2dds::read<String>(reader, [node](String & msg){
     RCLCPP_INFO(node.get_logger(), "I heard: [%s]", msg.data().c_str());
   }, 10s);
 }
 ```
 
-#### wait_for_data()
+#### read()
 
 *Example usage:*
 
 ```cpp
-#include <rti/ros2/node/sub.hpp>
+#include "ros2dds/ros2dds.hpp"
 
 #include "std_msgs/msg/String.hpp"
 
-void read_topic(rclcpp::Node & node)
+using std_msgs::msg::String;
+
+void read_data(rclcpp::Node & node, dds::sub::DataReader<String> & reader)
 {
-  using std_msgs::msg::String;
   using namespace std::chrono_literals;
-  rti::ros2::node::wait_for_data<String>("chatter", [node](String & msg){
+  ros2dds::read<String>(reader, [node](String & msg){
     RCLCPP_INFO(node.get_logger(), "I heard: [%s]", msg.data().c_str());
   }, 10s);
 }
@@ -231,22 +227,22 @@ Applications built using the Connext Node API will rarely need to access the
 underlying DomainParticipant directly, since all public functions take a node
 reference and automatically retrieve it's associated DomainParticipant.
 
-#### dds_domain_id()
+#### domain_id()
 
 *Return the id of the DDS domain joined by a node.*
 
 *Example usage:*
 
 ```cpp
-#include <rti/ros2/node/domain.hpp>
+#include "ros2dds/ros2dds.hpp"
 
 void print_domain(rclcpp::Node & node) {
   std::cout << "Node " << node.get_name() << " is part of DDS domain " <<
-    rti::ros2::node::dds_domain_id(node) << "\n";
+    ros2dds::domain_id(node) << "\n";
 }
 ```
 
-#### dds_domain_participant()
+#### domain_participant()
 
 *Access the DDS DomainParticipant associated with a node.*
 
@@ -264,10 +260,10 @@ for two nodes on the same domain but on different context.
 *Example usage:*
 
 ```cpp
-#include <rti/ros2/node/domain.hpp>
+#include "ros2dds/ros2dds.hpp"
 
 void print_domain(rclcpp::Node & node) {
-  auto participant = rti::ros2::node::dds_domain_participant(node);
+  auto participant = ros2dds::domain_participant(node);
 
   std::cout << "Node " << node.get_name() << " is part of DDS domain " <<
     participant.domain_id() << "\n";
@@ -281,12 +277,12 @@ void print_domain(rclcpp::Node & node) {
 *Example usage:*
 
 ```cpp
-#include <rti/ros2/node/topic.hpp>
+#include "ros2dds/ros2dds.hpp" 
 
 void print_dds_topic(rclcpp::Node & node, const char * const topic)
 {
   RCLCPP_INFO(node.get_logger(), "actual DDS topic: %s => %s",
-    topic, rti::ros2::node::resolve_topic_name(node, topic));
+    topic, ros2dds::resolve_topic_name(node, topic));
 }
 ```
 
@@ -295,14 +291,14 @@ void print_dds_topic(rclcpp::Node & node, const char * const topic)
 *Example usage:*
 
 ```cpp
-#include <rti/ros2/node/topic.hpp>
+#include "ros2dds/ros2dds.hpp"
 
 #include "std_msgs/msg/String.hpp"
 
 void create_topic(rclcpp::Node & node)
 {
   using std_msgs::msg::String;
-  auto topic = rti::ros2::node::create_topic<String>(node, "my_topic");
+  auto topic = ros2dds::create_topic<String>(node, "my_topic");
 
   RCLCPP_INFO(node.get_logger(), "retaining topic for later use: %s", topic.name().c_str());
 
@@ -315,14 +311,14 @@ void create_topic(rclcpp::Node & node)
 *Example usage:*
 
 ```cpp
-#include <rti/ros2/node/topic.hpp>
+#include "ros2dds/ros2dds.hpp"
 
 #include "std_msgs/msg/String.hpp"
 
 bool has_topic(rclcpp::Node & node)
 {
   using std_msgs::msg::String;
-  auto topic = rti::ros2::node::lookup_topic<String>(node, "my_topic");
+  auto topic = ros2dds::lookup_topic<String>(node, "my_topic");
   return nullptr != topic;
 }
 ```
@@ -331,14 +327,14 @@ bool has_topic(rclcpp::Node & node)
 
 
 ```cpp
-#include <rti/ros2/node/topic.hpp>
+#include "ros2dds/ros2dds.hpp"
 
 #include "std_msgs/msg/String.hpp"
 
 void assert_topic(rclcpp::Node & node)
 {
   using std_msgs::msg::String;
-  auto topic = rti::ros2::node::assert_topic<String>(node, "my_topic");
+  auto topic = ros2dds::assert_topic<String>(node, "my_topic");
 
   RCLCPP_INFO(node.get_logger(), "retaining topic for later use: %s", topic.name().c_str());
 
@@ -346,18 +342,18 @@ void assert_topic(rclcpp::Node & node)
 }
 ```
 
-#### create_filtered_topic()
+#### create_content_filtered_topic()
 
 
 ```cpp
-#include <rti/ros2/node/topic.hpp>
+#include "ros2dds/ros2dds.hpp"
 
 #include "std_msgs/msg/String.hpp"
 
-void create_filtered_topic(rclcpp::Node & node)
+void create_content_filtered_topic(rclcpp::Node & node)
 {
   using std_msgs::msg::String;
-  auto topic = rti::ros2::node::create_filtered_topic<String>(node, "my_topic",
+  auto topic = ros2dds::create_content_filtered_topic<String>(node, "my_topic",
     "my_custom_filter", "data LIKE 'Hello Connext!'");
 
   RCLCPP_INFO(node.get_logger(), "retaining topic for later use: %s", topic.name().c_str());

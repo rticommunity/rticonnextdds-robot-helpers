@@ -17,6 +17,8 @@
 
 #include "rclcpp/rclcpp.hpp"
 
+#include "ros2dds/ros2dds.hpp"
+
 #include "rclcpp_dds/visibility_control.hpp"
 
 namespace rclcpp_dds
@@ -38,7 +40,13 @@ public:
   RCLCPP_DDS_PUBLIC
   DdsNodeOptions(const DdsNodeOptions & other)
   : NodeOptions(other),
-    use_ros_naming_conventions_(other.use_ros_naming_conventions_)
+    use_ros_naming_conventions_(other.use_ros_naming_conventions_),
+    dds_executor_(other.dds_executor_)
+  {}
+
+  RCLCPP_DDS_PUBLIC
+  DdsNodeOptions(const NodeOptions & other)
+  : NodeOptions(other)
   {}
 
   /// Assignment operator.
@@ -46,8 +54,19 @@ public:
   DdsNodeOptions &
   operator=(const DdsNodeOptions & other)
   {
-    // TODO(asorbini) implement me
-    (void)other;
+    rclcpp::NodeOptions::operator=(other);
+    if (this != &other) {
+      use_ros_naming_conventions_ = other.use_ros_naming_conventions_;
+      dds_executor_ = other.dds_executor_;
+    }
+    return *this;
+  }
+
+  RCLCPP_DDS_PUBLIC
+  DdsNodeOptions &
+  operator=(const NodeOptions & other)
+  {
+    rclcpp::NodeOptions::operator=(other);
     return *this;
   }
 
@@ -66,11 +85,33 @@ public:
     return *this;
   }
 
+  RCLCPP_DDS_PUBLIC
+  std::shared_ptr<ros2dds::WaitSetExecutor> &
+  dds_executor()
+  {
+    return dds_executor_;
+  }
+
+  RCLCPP_DDS_PUBLIC
+  std::shared_ptr<ros2dds::WaitSetExecutor>
+  dds_executor() const
+  {
+    return dds_executor_;
+  }
+
+  RCLCPP_DDS_PUBLIC
+  DdsNodeOptions &
+  dds_executor(const std::shared_ptr<ros2dds::WaitSetExecutor> & the_dds_executor)
+  {
+    dds_executor_ = the_dds_executor;
+    return *this;
+  }
+
 private:
   bool use_ros_naming_conventions_{true};
+  std::shared_ptr<ros2dds::WaitSetExecutor> dds_executor_;
 };
 
-}
-
+}  // namespace rclcpp_dds
 
 #endif  // RCLCPP_DDS__DDS_NODE_OPTIONS_HPP_

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(rclcpp_dds)
+project(ros2dds)
 
 # Default to C99
 if(NOT CMAKE_C_STANDARD)
@@ -17,20 +17,37 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-find_package(ros2dds REQUIRED)
+find_package(connext_node_helpers REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(rcpputils REQUIRED)
+find_package(rcutils REQUIRED)
 
 add_library(${PROJECT_NAME} SHARED
-  src/dds_node.cpp
-  include/rclcpp_dds/rclcpp_dds.hpp
-  include/rclcpp_dds/dds_node.hpp
-  include/rclcpp_dds/dds_node_mixin.hpp
-  include/rclcpp_dds/dds_node_options.hpp
-  include/rclcpp_dds/visibility_control.hpp
+  src/resolve.cpp
+  include/ros2dds/ros2dds.hpp
+  include/ros2dds/domain.hpp
+  include/ros2dds/resolve.hpp
+  include/ros2dds/request.hpp
+  include/ros2dds/topic.hpp
+  include/ros2dds/pub.hpp
+  include/ros2dds/sub.hpp
+  include/ros2dds/qos.hpp
+  include/ros2dds/condition.hpp
+  include/ros2dds/waitset_executor.hpp
+  include/ros2dds/visibility_control.hpp
 )
 ament_target_dependencies(${PROJECT_NAME}
-  ros2dds
+  rclcpp
+  rcpputils
+  rcutils
 )
 ament_export_libraries(${PROJECT_NAME})
+target_link_libraries(${PROJECT_NAME}
+  # Modern C++ API
+  RTIConnextDDS::cpp2_api
+  # RTI Modern C++ Messaging API
+  RTIConnextDDS::messaging_cpp2_api
+)
 target_include_directories(${PROJECT_NAME}
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
@@ -55,7 +72,10 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_dependencies(
-  ros2dds
+  rclcpp
+  rcpputils
+  rcutils
+  connext_node_helpers
 )
 
 ament_package()

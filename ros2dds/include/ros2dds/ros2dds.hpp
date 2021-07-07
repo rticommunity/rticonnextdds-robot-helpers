@@ -11,11 +11,17 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef RCLCPP_DDS__RCLCPP_DDS_HPP_
-#define RCLCPP_DDS__RCLCPP_DDS_HPP_
+#ifndef ROS2DDS__ROS2DDS_HPP_
+#define ROS2DDS__ROS2DDS_HPP_
 
-#include "rclcpp_dds/dds_node_options.hpp"
-#include "rclcpp_dds/dds_node_mixin.hpp"
-#include "rclcpp_dds/dds_node.hpp"
+#include "ros2dds/domain.hpp"
+#include "ros2dds/resolve.hpp"
+#include "ros2dds/topic.hpp"
+#include "ros2dds/qos.hpp"
+#include "ros2dds/pub.hpp"
+#include "ros2dds/sub.hpp"
+#include "ros2dds/request.hpp"
+#include "ros2dds/condition.hpp"
+#include "ros2dds/waitset_executor.hpp"
 
-#endif  // RCLCPP_DDS__RCLCPP_DDS_HPP_
+#endif  // ROS2DDS__ROS2DDS_HPP_

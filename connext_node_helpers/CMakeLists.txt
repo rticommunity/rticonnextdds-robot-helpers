@@ -26,12 +26,10 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-find_package(rclcpp REQUIRED)
-find_package(rclcpp_components REQUIRED)
-find_package(rcpputils REQUIRED)
-find_package(rcutils REQUIRED)
 find_package(rti_connext_dds_cmake_module REQUIRED)
 find_package(rmw_connextdds REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(rclcpp_components REQUIRED)
 
 list(INSERT CMAKE_MODULE_PATH 0 "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 find_package(RTIConnextDDS REQUIRED COMPONENTS messaging_api)
@@ -53,61 +51,22 @@ endif()
 
 # Install CMake helpers
 install(
-    FILES
-      cmake/FindRTIConnextDDS.cmake
-      cmake/connext_add_executable.cmake
-      cmake/connext_components_register_node.cmake
-      cmake/connext_generate_message_typesupport_cpp.cmake
-      cmake/connext_generate_typesupport_library.cmake
-      cmake/node_main.cpp.in
-    DESTINATION "share/${PROJECT_NAME}/cmake")
-
-################################################################################
-# Build included examples unless disabled
-################################################################################
-option(BUILD_EXAMPLES "Build included examples" OFF)
-
-# if(BUILD_EXAMPLES)
-#   find_package(std_msgs REQUIRED)
-
-#   connext_generate_message_typesupport_cpp(String PACKAGE std_msgs)
-
-#   add_library(connext_node_helpers_examples SHARED
-#     src/examples/ping_string.cpp
-#     ${std_msgs_String_FILES}
-#     include/connext_node_helpers/visibility_control.h)
-#   target_compile_definitions(connext_node_helpers_examples
-#     PRIVATE "CONNEXT_NODE_HELPERS_BUILDING_DLL")
-#   target_include_directories(connext_node_helpers_examples
-#     PRIVATE
-#       ${CMAKE_CURRENT_BINARY_DIR}/rtiddsgen
-#       ${CMAKE_CURRENT_SOURCE_DIR}/include)
-#   target_link_libraries(connext_node_helpers_examples
-#     RTIConnextDDS::cpp2_api
-#     ${PROJECT_NAME})
-#   set_target_properties(
-#     connext_node_helpers_examples PROPERTIES ENABLE_EXPORTS true)
-#   install(TARGETS connext_node_helpers_examples
-#     ARCHIVE DESTINATION lib
-#     LIBRARY DESTINATION lib
-#     RUNTIME DESTINATION bin)
-
-#   connext_components_register_node(connext_node_helpers_examples
-#     PLUGIN "StringPingPublisher"
-#     EXECUTABLE ping_string_pub)
-
-#   connext_components_register_node(connext_node_helpers_examples
-#     PLUGIN "StringPingSubscriber"
-#     EXECUTABLE ping_string_sub)
-# endif()
+  FILES
+    cmake/FindRTIConnextDDS.cmake
+    cmake/connext_add_executable.cmake
+    cmake/connext_components_register_node.cmake
+    cmake/connext_generate_message_typesupport_cpp.cmake
+    cmake/connext_generate_typesupport_library.cmake
+    cmake/node_main.cpp.in
+  DESTINATION "share/${PROJECT_NAME}/cmake"
+)
 
 ament_export_dependencies(
+  rti_connext_dds_cmake_module
+  rmw_connextdds
   rclcpp
   rclcpp_components
-  rcpputils
-  rcutils
-  rti_connext_dds_cmake_module
-  rmw_connextdds)
+)
 
 ament_package(
   CONFIG_EXTRAS_POST "${PROJECT_NAME}-extras.cmake.in"
