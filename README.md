@@ -4,7 +4,7 @@ This repository contains a collection of helper resources to simplify the
 implementation of ROS 2 applications which use the APIs provided by
 [RTI Connext DDS Connectivity Framework](https://www.rti.com/products).
 
-- [How to use `connext_node_helpers` in a ROS 2 package](#how-to-use-connext_node_helpers-in-a-ros-2-package)
+- [How to use this repository in your ROS 2 package](#how-to-use-this-repository-in-your-ros-2-package)
 - [DDS Node API](#dds-node-api)
   - [DataWriter Helpers](#datawriter-helpers)
     - [DDSNode::create_datawriter()](#ddsnodecreate_datawriter)
