@@ -13,9 +13,9 @@
 # links Connext DDS directly, and which is linked with `-rdynamic` to enable
 # sharing of the DomainParticipantFactory and other entities with the RMW.
 ################################################################################
-function(connext_components_register_node target)
+macro(connext_components_register_node target)
   cmake_parse_arguments(_component
-    "" # boolean arguments
+    "ZEROCOPY" # boolean arguments
     "PLUGIN;EXECUTABLE;RESOURCE_INDEX" # single value arguments
     "" # multi-value arguments
     ${ARGN} # current function arguments
@@ -24,6 +24,7 @@ function(connext_components_register_node target)
   # use a custom template to generate each node's main, because we must make
   # sure that the DomainParticipantFactory's global static variable is linked
   # into the process. We do this by calling some DDS API that accesses it.
+  set(rclcpp_components_NODE_TEMPLATE_BKP "${rclcpp_components_NODE_TEMPLATE}")
   set(rclcpp_components_NODE_TEMPLATE ${connext_node_helpers_NODE_TEMPLATE})
 
   rclcpp_components_register_node(${target}
@@ -33,4 +34,11 @@ function(connext_components_register_node target)
 
   set_target_properties(${_component_EXECUTABLE} PROPERTIES ENABLE_EXPORTS true)
   target_link_libraries(${_component_EXECUTABLE} RTIConnextDDS::cpp2_api)
-endfunction()
+
+  if(${_component_ZEROCOPY})
+    target_link_libraries(${_component_EXECUTABLE} RTIConnextDDS::metp)
+  endif()
+
+  set(rclcpp_components_NODE_TEMPLATE "${rclcpp_components_NODE_TEMPLATE_BKP}")
+  unset(set(rclcpp_components_NODE_TEMPLATE_BKP)
+endmacro()
