@@ -14,7 +14,7 @@
 ################################################################################
 function(connext_generate_message_typesupport_cpp type)
   cmake_parse_arguments(_idl
-    "SERVER;SERVICE" # boolean arguments
+    "SERVER;SERVICE;MICRO" # boolean arguments
     "PACKAGE;OUTPUT_DIR;INSTALL_PREFIX;TARGET;WORKING_DIRECTORY" # single value arguments
     "INCLUDES;DEPENDS" # multi-value arguments
     ${ARGN} # current function arguments
@@ -78,14 +78,22 @@ macro(_connext_generate_message_typesupport_cpp_impl)
     set(rtiddsgen rtiddsgen)
   endif()
 
+  if(_idl_MICRO)
+    set(_idl_language   "C++11")
+    set(_idl_extra_opts  "-unboundedSupport")
+  else()
+    set(_idl_language   "C++")
+    set(_idl_extra_opts)
+  endif()
+
   set(_idl_CMD)
   list(APPEND _idl_CMD
     "${CONNEXTDDS_DIR}/bin/${rtiddsgen}"
     "-language"
-    "C++11"
+    "${_idl_LANGUAGE}"
     "-d" "${_idl_OUTPUT_DIR}/${_idl_NS}"
     "-replace"
-    "-unboundedSupport"
+    ${_idl_extra_opts}
     ${pkg_includes}
     "${_idl_FILE}")
 
