@@ -40,5 +40,5 @@ macro(connext_components_register_node target)
   endif()
 
   set(rclcpp_components_NODE_TEMPLATE "${rclcpp_components_NODE_TEMPLATE_BKP}")
-  unset(set(rclcpp_components_NODE_TEMPLATE_BKP)
+  unset(rclcpp_components_NODE_TEMPLATE_BKP)
 endmacro()
