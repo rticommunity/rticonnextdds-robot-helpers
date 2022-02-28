@@ -79,18 +79,18 @@ macro(_connext_generate_message_typesupport_cpp_impl)
   endif()
 
   if(_idl_MICRO)
-    set(_idl_language   "C++11")
-    set(_idl_extra_opts  "-unboundedSupport")
-  else()
     set(_idl_language   "C++")
     set(_idl_extra_opts)
+  else()
+    set(_idl_language   "C++11")
+    set(_idl_extra_opts  "-unboundedSupport")
   endif()
 
   set(_idl_CMD)
   list(APPEND _idl_CMD
     "${CONNEXTDDS_DIR}/bin/${rtiddsgen}"
     "-language"
-    "${_idl_LANGUAGE}"
+    "${_idl_language}"
     "-d" "${_idl_OUTPUT_DIR}/${_idl_NS}"
     "-replace"
     ${_idl_extra_opts}
