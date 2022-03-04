@@ -44,14 +44,25 @@ macro(_connext_generate_message_typesupport_cpp_impl)
   get_filename_component(idl_filename "${_idl_FILE}" NAME)
   get_filename_component(idl_dir "${_idl_FILE}" DIRECTORY)
   string(REGEX REPLACE "\.idl$" "" idl_base "${idl_filename}")
-  set(generated_files
+  if(_idl_MICRO)
+    set(generated_files
+    "${_idl_OUTPUT_DIR}/${_idl_NS}${idl_base}.cxx"
+    "${_idl_OUTPUT_DIR}/${_idl_NS}${idl_base}.h"
+    "${_idl_OUTPUT_DIR}/${_idl_NS}${idl_base}Plugin.cxx"
+    "${_idl_OUTPUT_DIR}/${_idl_NS}${idl_base}Plugin.h"
+    "${_idl_OUTPUT_DIR}/${_idl_NS}${idl_base}Support.cxx"
+    "${_idl_OUTPUT_DIR}/${_idl_NS}${idl_base}Support.h")
+    set(_idl_HEADERS ${generated_files})
+    list(FILTER _idl_HEADERS INCLUDE REGEX ".*h$")
+  else()
+    set(generated_files
     "${_idl_OUTPUT_DIR}/${_idl_NS}${idl_base}.cxx"
     "${_idl_OUTPUT_DIR}/${_idl_NS}${idl_base}.hpp"
     "${_idl_OUTPUT_DIR}/${_idl_NS}${idl_base}Plugin.cxx"
     "${_idl_OUTPUT_DIR}/${_idl_NS}${idl_base}Plugin.hpp")
-
-  set(_idl_HEADERS ${generated_files})
-  list(FILTER _idl_HEADERS INCLUDE REGEX ".*hpp$")
+    set(_idl_HEADERS ${generated_files})
+    list(FILTER _idl_HEADERS INCLUDE REGEX ".*hpp$")
+  endif()
 
   file(MAKE_DIRECTORY "${_idl_OUTPUT_DIR}/${_idl_NS}")
 
@@ -80,7 +91,7 @@ macro(_connext_generate_message_typesupport_cpp_impl)
 
   if(_idl_MICRO)
     set(_idl_language   "C++")
-    set(_idl_extra_opts)
+    set(_idl_extra_opts -micro)
   else()
     set(_idl_language   "C++11")
     set(_idl_extra_opts  "-unboundedSupport")
