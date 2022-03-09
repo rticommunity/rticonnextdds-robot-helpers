@@ -14,8 +14,8 @@
 ################################################################################
 function(connext_generate_message_typesupport_cpp type)
   cmake_parse_arguments(_idl
-    "SERVER;SERVICE;MICRO" # boolean arguments
-    "PACKAGE;OUTPUT_DIR;INSTALL_PREFIX;TARGET;WORKING_DIRECTORY" # single value arguments
+    "SERVER;SERVICE;MICRO;LEGACY_CPP" # boolean arguments
+    "PACKAGE;OUTPUT_DIR;INSTALL_PREFIX;TARGET;WORKING_DIRECTORY;OUTPUT_VAR" # single value arguments
     "INCLUDES;DEPENDS" # multi-value arguments
     ${ARGN} # current function arguments
   )
@@ -44,7 +44,7 @@ macro(_connext_generate_message_typesupport_cpp_impl)
   get_filename_component(idl_filename "${_idl_FILE}" NAME)
   get_filename_component(idl_dir "${_idl_FILE}" DIRECTORY)
   string(REGEX REPLACE "\.idl$" "" idl_base "${idl_filename}")
-  if(_idl_MICRO)
+  if(_idl_MICRO OR _idl_LEGACY_CPP)
     set(generated_files
     "${_idl_OUTPUT_DIR}/${_idl_NS}${idl_base}.cxx"
     "${_idl_OUTPUT_DIR}/${_idl_NS}${idl_base}.h"
@@ -93,7 +93,11 @@ macro(_connext_generate_message_typesupport_cpp_impl)
     set(_idl_language   "C++")
     set(_idl_extra_opts -micro)
   else()
-    set(_idl_language   "C++11")
+    if(_idl_LEGACY_CPP)
+      set(_idl_language   "C++")
+    else()
+      set(_idl_language   "C++11")
+    endif()
     set(_idl_extra_opts  "-unboundedSupport")
   endif()
 
@@ -160,7 +164,9 @@ macro(_connext_generate_message_typesupport_cpp_ros)
   endif()
 
   # Set OUTPUT_VAR based on "<pkg>_<type>_FILES"
-  set(_idl_OUTPUT_VAR ${_idl_PACKAGE}_${type}_FILES)
+  if("${_idl_OUTPUT_VAR}" STREQUAL "")
+    set(_idl_OUTPUT_VAR ${_idl_PACKAGE}_${type}_FILES)
+  endif()
 
   # Prepare include path for `rtiddsgen` by processing INCLUDES as list of
   # ROS 2 message types (as "<pkg>/<msg>")
@@ -215,14 +221,19 @@ macro(_connext_generate_message_typesupport_cpp_dds)
 
   # PACKAGE might be empty when used for DDS IDL, so set OUTPUT_VAR accordingly.
   # If not empty, replace all `/` with `_`
+
   if(NOT "${_idl_PACKAGE}" STREQUAL "")
     string(REPLACE "/" "_" _idl_package "${_idl_PACKAGE}")
-    set(_idl_OUTPUT_VAR ${_idl_package}_${type}_FILES)
+    if("${_idl_OUTPUT_VAR}" STREQUAL "")
+      set(_idl_OUTPUT_VAR ${_idl_package}_${type}_FILES)
+    endif()
     if(NOT _idl_TARGET)
       set(_idl_TARGET "rtiddsgen_${_idl_package}")
     endif()
   else()
-    set(_idl_OUTPUT_VAR ${type}_FILES)
+    if("${_idl_OUTPUT_VAR}" STREQUAL "")
+      set(_idl_OUTPUT_VAR ${type}_FILES)
+    endif()
     if(NOT _idl_TARGET)
       set(_idl_TARGET "rtiddsgen_${type}")
     endif()
