@@ -101,4 +101,30 @@ resolve_type_name(
   return ss.str();
 }
 
+template<>
+std::string
+resolve_topic_name(
+  rclcpp::Node & node,
+  const std::string & topic_name,
+  const TopicKind topic_kind,
+  const bool use_ros_conventions)
+{
+  if (!use_ros_conventions) {
+    return topic_name;
+  }
+  if (topic_kind == TopicKind::Request || topic_kind == TopicKind::Reply)
+  {
+    std::string sub_namespace = node.get_sub_namespace();
+    std::string res_topic_name(topic_name);
+    if (sub_namespace != "" && topic_name.front() != '/' && topic_name.front() != '~') {
+      res_topic_name = sub_namespace + "/" + topic_name;
+    }
+
+    return resolve_topic_name(
+      node_name(node), node_namespace(node), res_topic_name, topic_kind, true);
+  }
+  auto node_topics_interface = rclcpp::node_interfaces::get_node_topics_interface(node);
+  return node_topics_interface->resolve_topic_name(topic_name);
+}
+
 }  // namespace ros2dds

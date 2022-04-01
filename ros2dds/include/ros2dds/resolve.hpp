@@ -24,6 +24,8 @@
 #include "ros2dds/domain.hpp"
 #include "ros2dds/visibility_control.hpp"
 
+#include "rclcpp/node_interfaces/node_topics_interface.hpp"
+
 namespace ros2dds
 {
 /**
@@ -71,7 +73,7 @@ resolve_topic_name(
  * @param use_ros_conventions
  * @return std::string
  */
-template<typename NodeT = rclcpp::Node>
+template<typename NodeT>
 std::string
 resolve_topic_name(
   NodeT & node,
@@ -82,6 +84,14 @@ resolve_topic_name(
   return resolve_topic_name(
     node_name(node), node_namespace(node), topic_name, topic_kind, use_ros_conventions);
 }
+
+template<>
+std::string
+resolve_topic_name(
+  rclcpp::Node & node,
+  const std::string & topic_name,
+  const TopicKind topic_kind,
+  const bool use_ros_conventions);
 
 ROS2DDS_PUBLIC
 std::string

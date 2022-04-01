@@ -72,7 +72,7 @@ public:
    */
   size_t domain_id()
   {
-    return ros2dds::domain_id(*this);
+    return ros2dds::domain_id(*this->as_rclcpp_node());
   }
 
   /**
@@ -85,7 +85,7 @@ public:
   {
     // Cache domain participant for later lookups.
     if (nullptr == domain_participant_) {
-      domain_participant_ = ros2dds::domain_participant(*this);
+      domain_participant_ = ros2dds::domain_participant(*this->as_rclcpp_node());
     }
     return domain_participant_;
   }
@@ -97,7 +97,7 @@ public:
     const std::string & custom_type_name = std::string())
   {
     return ros2dds::create_topic<MessageT>(
-      *this,
+      *this->as_rclcpp_node(),
       topic_name,
       TopicKind::Topic,
       node_options_.use_ros_naming_conventions(),
@@ -112,7 +112,7 @@ public:
     const std::string & custom_type_name = std::string())
   {
     return ros2dds::create_topic<MessageT>(
-      *this,
+      *this->as_rclcpp_node(),
       service_name,
       (request) ? TopicKind::Request : TopicKind::Reply,
       node_options_.use_ros_naming_conventions(),
@@ -124,7 +124,7 @@ public:
   lookup_topic(const std::string & topic_name)
   {
     return ros2dds::lookup_topic<MessageT>(
-      *this,
+      *this->as_rclcpp_node(),
       topic_name,
       TopicKind::Topic,
       node_options_.use_ros_naming_conventions());
@@ -137,7 +137,7 @@ public:
     const bool request = true)
   {
     return ros2dds::lookup_topic<MessageT>(
-      *this,
+      *this->as_rclcpp_node(),
       service_name,
       (request) ? TopicKind::Request : TopicKind::Reply,
       node_options_.use_ros_naming_conventions());
@@ -152,7 +152,7 @@ public:
     const std::vector<std::string> & filter_parameters = std::vector<std::string>())
   {
     return ros2dds::create_content_filtered_topic<MessageT>(
-      *this,
+      *this->as_rclcpp_node(),
       base_topic,
       filter_name,
       filter_expression,
@@ -163,7 +163,7 @@ public:
   dds::topic::ContentFilteredTopic<MessageT>
   lookup_content_filtered_topic(const std::string & filter_name)
   {
-    return ros2dds::lookup_content_filtered_topic<MessageT>(*this, filter_name);
+    return ros2dds::lookup_content_filtered_topic<MessageT>(*this->as_rclcpp_node(), filter_name);
   }
 
   /**
@@ -177,11 +177,11 @@ public:
   {
     if (fq_topic_name.length() > 0) {
       return ros2dds::default_datawriter_qos(
-        *this,
+        *this->as_rclcpp_node(),
         fq_topic_name,
         false /* expand */);
     } else {
-      return ros2dds::default_datawriter_qos(*this);
+      return ros2dds::default_datawriter_qos(*this->as_rclcpp_node());
     }
   }
 
@@ -196,11 +196,11 @@ public:
   {
     if (fq_topic_name.length() > 0) {
       return ros2dds::default_datareader_qos(
-        *this,
+        *this->as_rclcpp_node(),
         fq_topic_name,
         false /* expand */);
     } else {
-      return ros2dds::default_datareader_qos(*this);
+      return ros2dds::default_datareader_qos(*this->as_rclcpp_node());
     }
   }
 
@@ -215,7 +215,7 @@ public:
   get_datawriter_qos_profile(const std::string & qos_profile)
   {
     // TODO(asorbini) support get_w_topic_name()
-    return ros2dds::datawriter_qos_profile(*this, qos_profile);
+    return ros2dds::datawriter_qos_profile(*this->as_rclcpp_node(), qos_profile);
   }
 
   /**
@@ -229,7 +229,7 @@ public:
   get_datareader_qos_profile(const std::string & qos_profile)
   {
     // TODO(asorbini) support get_w_topic_name()
-    return ros2dds::datareader_qos_profile(*this, qos_profile);
+    return ros2dds::datareader_qos_profile(*this->as_rclcpp_node(), qos_profile);
   }
 
   template<typename MessageT>
@@ -239,7 +239,7 @@ public:
     const std::string & type_name = std::string())
   {
     return ros2dds::create_datawriter<MessageT>(
-      *this,
+      *this->as_rclcpp_node(),
       topic_name,
       TopicKind::Topic,
       node_options_.use_ros_naming_conventions(),
@@ -254,7 +254,7 @@ public:
     const std::string & type_name = std::string())
   {
     return ros2dds::create_datawriter<MessageT>(
-      *this,
+      *this->as_rclcpp_node(),
       topic_name,
       qos,
       TopicKind::Topic,
@@ -266,7 +266,7 @@ public:
   dds::pub::DataWriter<MessageT>
   create_datawriter(dds::topic::Topic<MessageT> & topic)
   {
-    return ros2dds::create_datawriter<MessageT>(*this, topic);
+    return ros2dds::create_datawriter<MessageT>(*this->as_rclcpp_node(), topic);
   }
 
   template<typename MessageT>
@@ -275,7 +275,7 @@ public:
     dds::topic::Topic<MessageT> & topic,
     const dds::pub::qos::DataWriterQos & qos)
   {
-    return ros2dds::create_datawriter<MessageT>(*this, topic, qos);
+    return ros2dds::create_datawriter<MessageT>(*this->as_rclcpp_node(), topic, qos);
   }
 
   /////
@@ -288,7 +288,7 @@ public:
     const std::string & custom_type_name = std::string())
   {
     return ros2dds::create_datawriter<MessageT>(
-      *this,
+      *this->as_rclcpp_node(),
       topic_name,
       (request) ? TopicKind::Request : TopicKind::Reply,
       node_options_.use_ros_naming_conventions(),
@@ -304,7 +304,7 @@ public:
     const std::string & custom_type_name = std::string())
   {
     return ros2dds::create_datawriter<MessageT>(
-      *this,
+      *this->as_rclcpp_node(),
       topic_name,
       qos,
       (request) ? TopicKind::Request : TopicKind::Reply,
@@ -320,7 +320,7 @@ public:
     const std::string & custom_type_name = std::string())
   {
     return ros2dds::create_datareader<MessageT>(
-      *this,
+      *this->as_rclcpp_node(),
       topic_name,
       TopicKind::Topic,
       node_options_.use_ros_naming_conventions(),
@@ -335,7 +335,7 @@ public:
     const std::string & custom_type_name = std::string())
   {
     return ros2dds::create_datareader<MessageT>(
-      *this,
+      *this->as_rclcpp_node(),
       topic_name,
       qos,
       TopicKind::Topic,
@@ -347,7 +347,7 @@ public:
   dds::sub::DataReader<MessageT>
   create_datareader(dds::topic::Topic<MessageT> & topic)
   {
-    return ros2dds::create_datareader<MessageT>(*this, topic);
+    return ros2dds::create_datareader<MessageT>(*this->as_rclcpp_node(), topic);
   }
 
   template<typename MessageT>
@@ -356,7 +356,7 @@ public:
     dds::topic::Topic<MessageT> & topic,
     const dds::sub::qos::DataReaderQos & qos)
   {
-    return ros2dds::create_datareader<MessageT>(*this, topic, qos);
+    return ros2dds::create_datareader<MessageT>(*this->as_rclcpp_node(), topic, qos);
   }
 
   ////
@@ -368,7 +368,7 @@ public:
     const std::string & custom_type_name = std::string())
   {
     return ros2dds::create_datareader<MessageT>(
-      *this,
+      *this->as_rclcpp_node(),
       topic_name,
       (request) ? TopicKind::Request : TopicKind::Reply,
       node_options_.use_ros_naming_conventions(),
@@ -384,7 +384,7 @@ public:
     const std::string & custom_type_name = std::string())
   {
     return ros2dds::create_datareader<MessageT>(
-      *this,
+      *this->as_rclcpp_node(),
       topic_name,
       qos,
       (request) ? TopicKind::Request : TopicKind::Reply,
@@ -621,6 +621,16 @@ protected:
       }
     }
     return false;
+  }
+protected:
+  rclcpp::Node* as_rclcpp_node()
+  {
+    return dynamic_cast<rclcpp::Node*>(this);
+  }
+
+  const rclcpp::Node* as_rclcpp_node() const
+  {
+    return dynamic_cast<const rclcpp::Node*>(this);
   }
 
 private:

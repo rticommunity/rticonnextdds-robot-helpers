@@ -59,7 +59,6 @@ create_topic(
     resolve_topic_name<NodeT>(node, topic_name, topic_kind, use_ros_conventions);
 
   auto fq_type_name = topic_type_name<MessageT>(node, use_ros_conventions, type_name);
-
   return dds::topic::Topic<MessageT>(participant, fq_topic_name, fq_type_name);
 }
 

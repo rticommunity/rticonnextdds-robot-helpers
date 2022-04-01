@@ -25,7 +25,7 @@
 
 #include "rti/core/cond/AsyncWaitSet.hpp"
 
-#include "rclcpp/scope_exit.hpp"
+#include "rcpputils/scope_exit.hpp"
 
 namespace ros2dds
 {
@@ -76,7 +76,7 @@ public:
       throw std::runtime_error("notifier already spinning");
     }
     waiting_ = true;
-    auto wait_exit = rclcpp::make_scope_exit(
+    auto wait_exit = rcpputils::make_scope_exit(
       [this]() {
         waiting_ = false;
       });
@@ -144,7 +144,7 @@ public:
       }
     }
     waiting_ = true;
-    auto wait_exit = rclcpp::make_scope_exit(
+    auto wait_exit = rcpputils::make_scope_exit(
       [this]() {
         std::lock_guard<std::mutex> lock(wait_mutex_);
         waiting_ = false;
