@@ -124,7 +124,10 @@ resolve_topic_name(
       node_name(node), node_namespace(node), res_topic_name, topic_kind, true);
   }
   auto node_topics_interface = rclcpp::node_interfaces::get_node_topics_interface(node);
-  return node_topics_interface->resolve_topic_name(topic_name);
+  auto resolved = node_topics_interface->resolve_topic_name(topic_name);
+  return resolve_topic_name(
+      node_name(node), node_namespace(node), resolved.c_str(),
+        TopicKind::Topic, true);
 }
 
 }  // namespace ros2dds
