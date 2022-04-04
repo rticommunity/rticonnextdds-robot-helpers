@@ -29,6 +29,7 @@ get_filename_component(@PROJECT_NAME@_SHARE_DIR
 # This is required for things to work properly.
 ################################################################################
 find_package(rti_connext_dds_cmake_module REQUIRED)
+find_package(rmw_connextdds REQUIRED)
 
 # Instead of using the default `FindRTIConnextDDS.cmake` shipped with Connext
 # use the one included in `connext_node_helpers` which is up to date with the

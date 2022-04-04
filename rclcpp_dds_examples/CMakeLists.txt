@@ -82,6 +82,7 @@ target_link_libraries(${PROJECT_NAME}
 )
 ament_target_dependencies(${PROJECT_NAME}
   rclcpp_dds
+  rclcpp_components
 )
 # set_target_properties(${PROJECT_NAME}
 #   PROPERTIES ENABLE_EXPORTS true)

@@ -63,7 +63,6 @@ install(
 
 ament_export_dependencies(
   rti_connext_dds_cmake_module
-  rmw_connextdds
   rclcpp
   rclcpp_components
 )
