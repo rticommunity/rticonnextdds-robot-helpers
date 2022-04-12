@@ -26,7 +26,7 @@ void set_default_qos_properties(dds::pub::qos::DataWriterQos & qos)
 {
   const char * const prop_name =
     "dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size";
-  if (!qos.property().exists(prop_name)) {
+  if (!qos.policy<rti::core::policy::Property>().exists(prop_name)) {
     rti::core::policy::Property props;
     props.set({prop_name, "0"}, false);
     qos << props;
@@ -38,7 +38,7 @@ void set_default_qos_properties(dds::sub::qos::DataReaderQos & qos)
 {
   const char * const prop_name =
     "dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size";
-  if (!qos.property().exists(prop_name)) {
+  if (!qos.policy<rti::core::policy::Property>().exists(prop_name)) {
     rti::core::policy::Property props;
     props.set({prop_name, "0"}, false);
     qos << props;
