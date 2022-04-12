@@ -24,25 +24,25 @@ namespace ros2dds
 inline
 void set_default_qos_properties(dds::pub::qos::DataWriterQos & qos)
 {
-  rti::core::policy::Property props;
-  props.set(
-    {
-      "dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size",
-      "0"
-    }, false);
-  qos << props;
+  const char * const prop_name =
+    "dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size";
+  if (!qos.property().exists(prop_name)) {
+    rti::core::policy::Property props;
+    props.set({prop_name, "0"}, false);
+    qos << props;
+  }
 }
 
 inline
 void set_default_qos_properties(dds::sub::qos::DataReaderQos & qos)
 {
-  rti::core::policy::Property props;
-  props.set(
-    {
-      "dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size",
-      "0"
-    }, false);
-  qos << props;
+  const char * const prop_name =
+    "dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size";
+  if (!qos.property().exists(prop_name)) {
+    rti::core::policy::Property props;
+    props.set({prop_name, "0"}, false);
+    qos << props;
+  }
 }
 
 template<typename NodeT = rclcpp::Node>
