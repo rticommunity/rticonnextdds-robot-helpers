@@ -110,6 +110,7 @@ macro(_connext_generate_message_typesupport_cpp_impl)
     "-replace"
     ${_idl_extra_opts}
     ${pkg_includes}
+    ${RTIDDSGEN_GLOBAL_ARGS}
     "${_idl_FILE}")
 
   # Add a top level target to run code-generation
