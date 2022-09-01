@@ -26,7 +26,6 @@ macro(connext_components_register_node target)
   # into the process. We do this by calling some DDS API that accesses it.
   set(rclcpp_components_NODE_TEMPLATE_BKP "${rclcpp_components_NODE_TEMPLATE}")
   set(rclcpp_components_NODE_TEMPLATE ${connext_node_helpers_NODE_TEMPLATE})
-  set()
 
   rclcpp_components_register_node(${target}
     PLUGIN "${_component_PLUGIN}"
