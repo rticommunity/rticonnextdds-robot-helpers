@@ -27,6 +27,17 @@ macro(connext_components_register_node target)
   set(rclcpp_components_NODE_TEMPLATE_BKP "${rclcpp_components_NODE_TEMPLATE}")
   set(rclcpp_components_NODE_TEMPLATE ${connext_node_helpers_NODE_TEMPLATE})
 
+  # ROS Versions before Humble didn't use the @executor@ variable to
+  # specify the executor to use. Set the variable to a default value
+  # and let rclcpp_components_register_node() override it if needed.
+  # In an ideal world, we would check for the current ROS version and
+  # behave conditionally on that. This would allow us, for example, to
+  # also accept/pass through the EXECUTOR argument if ROS version >= Humble
+  if(NOT DEFINED executor)
+    set(_executor_SET  TRUE)
+    set(executor SingleThreadedExecutor)
+  endif()
+
   rclcpp_components_register_node(${target}
     PLUGIN "${_component_PLUGIN}"
     EXECUTABLE "${_component_EXECUTABLE}"
@@ -41,4 +52,9 @@ macro(connext_components_register_node target)
 
   set(rclcpp_components_NODE_TEMPLATE "${rclcpp_components_NODE_TEMPLATE_BKP}")
   unset(rclcpp_components_NODE_TEMPLATE_BKP)
+
+  if(_executor_SET)
+    unset(executor)
+    unset(_executor_SET)
+  endif()
 endmacro()
