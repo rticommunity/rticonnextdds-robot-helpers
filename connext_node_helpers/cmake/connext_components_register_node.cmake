@@ -26,11 +26,12 @@ macro(connext_components_register_node target)
   # into the process. We do this by calling some DDS API that accesses it.
   set(rclcpp_components_NODE_TEMPLATE_BKP "${rclcpp_components_NODE_TEMPLATE}")
   set(rclcpp_components_NODE_TEMPLATE ${connext_node_helpers_NODE_TEMPLATE})
+  set()
 
   rclcpp_components_register_node(${target}
-    PLUGIN ${_component_PLUGIN}
-    EXECUTABLE ${_component_EXECUTABLE}
-    RESOURCE_INDEX ${_component_RESOURCE_INDEX})
+    PLUGIN "${_component_PLUGIN}"
+    EXECUTABLE "${_component_EXECUTABLE}"
+    RESOURCE_INDEX "${_component_RESOURCE_INDEX}")
 
   set_target_properties(${_component_EXECUTABLE} PROPERTIES ENABLE_EXPORTS true)
   target_link_libraries(${_component_EXECUTABLE} RTIConnextDDS::cpp2_api)
