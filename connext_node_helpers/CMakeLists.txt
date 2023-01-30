@@ -31,13 +31,14 @@ find_package(rmw_connextdds REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 
-find_package(RTIConnextDDS REQUIRED COMPONENTS messaging_api)
+rti_find_connextpro(${CONNEXTDDS_COMPONENTS})
+
 if(NOT RTIConnextDDS_FOUND)
   message(FATAL_ERROR "RTI Connext DDS (${CONNEXTDDS_ARCH}) not found in "
     "'${CONNEXTDDS_DIR}'")
-elseif("${RTICONNEXTDDS_VERSION}" VERSION_LESS_EQUAL "6.0.0")
+elseif("${CONNEXTDDS_VERSION}" VERSION_LESS_EQUAL "6.0.0")
   message(FATAL_ERROR "RTI Connext DDS 6.x required. "
-    "Found: ${RTICONNEXTDDS_VERSION}")
+    "Found: ${CONNEXTDDS_VERSION}")
   set(RTIConnextDDS_FOUND false)
 endif()
 
