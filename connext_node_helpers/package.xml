@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>connext_node_helpers</name>
-  <version>0.1.0</version>
+  <version>0.1.1</version>
   <description>A collection of code and build utilities for ROS 2 application built with RTI Connext DDS</description>
   <maintainer email="asorbini@rti.com">Andrea Sorbini</maintainer>
   <license>RTI Free-To-Use</license>

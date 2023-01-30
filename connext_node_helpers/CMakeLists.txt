@@ -31,7 +31,6 @@ find_package(rmw_connextdds REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 
-list(INSERT CMAKE_MODULE_PATH 0 "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 find_package(RTIConnextDDS REQUIRED COMPONENTS messaging_api)
 if(NOT RTIConnextDDS_FOUND)
   message(FATAL_ERROR "RTI Connext DDS (${CONNEXTDDS_ARCH}) not found in "
@@ -52,7 +51,6 @@ endif()
 # Install CMake helpers
 install(
   FILES
-    cmake/FindRTIConnextDDS.cmake
     cmake/connext_add_executable.cmake
     cmake/connext_components_register_node.cmake
     cmake/connext_generate_message_typesupport_cpp.cmake
