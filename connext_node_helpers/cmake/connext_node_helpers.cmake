@@ -49,7 +49,6 @@ list(INSERT CMAKE_MODULE_PATH 0 "${CONNEXT_NODE_HELPERS_DIR}/cmake")
 # CONNEXTDDS_COMPONENTS before loading `connext_node_helpers`.
 if("${CONNEXTDDS_COMPONENTS}" STREQUAL "")
   set(CONNEXTDDS_COMPONENTS
-    metp
     messaging_api
   )
 endif()

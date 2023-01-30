@@ -38,7 +38,6 @@ list(APPEND CMAKE_MODULE_PATH "${@PROJECT_NAME@_DIR}")
 # CONNEXTDDS_COMPONENTS before loading `connext_node_helpers`.
 if("${CONNEXTDDS_COMPONENTS}" STREQUAL "")
   set(CONNEXTDDS_COMPONENTS
-    metp
     messaging_api
   )
 endif()
