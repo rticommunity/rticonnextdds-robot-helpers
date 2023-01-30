@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>rclcpp_dds_examples</name>
-  <version>0.1.3</version>
+  <version>0.1.4</version>
   <description>Example applications for rclcpp_dds</description>
   <maintainer email="asorbini@rti.com">asorbini</maintainer>
   <license>RTI-FREE-USE</license>
